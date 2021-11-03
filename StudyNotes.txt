@@ -1,0 +1,4 @@
+Check:
+t tests
+chi-squared
+what is OR?

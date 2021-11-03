@@ -1,0 +1,6 @@
+DoS: 0.25
+LoS: 5km 
+Age clearly plays a role, age only modest
+In +- 3 years of PB significantly more likeley to HTW
+Ability main influence on HTW Start, Distance and Slowdown
+slower runners tend to begin slowing earlier and for longer than faster runners, and they slow down by a greater degree too.
