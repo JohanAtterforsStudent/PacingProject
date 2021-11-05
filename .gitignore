@@ -1,3 +1,5 @@
 *.pdf
 *.webarchive
 *.DS_Store
+__pycache__
+Varvetresultat/

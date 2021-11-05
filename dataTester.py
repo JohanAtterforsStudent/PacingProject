@@ -1,12 +1,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from pandas.core.frame import DataFrame
-
+import DataCalc
 
 def main():
     #ResultId;AthleteId;RaceId;RaceName;Gender;Birthyear;CountryIso;County;Municipality;Status;ActualStartTime;FinishNetto;Place;PlaceClass;PlaceTotal;_5Km;_10Km;_15Km;_20Km
-    rdf = pd.read_csv("Varvetresultat/2010sample.csv", header=0, sep=";", parse_dates=['ActualStartTime', 'FinishNetto', '_5Km', '_10Km', '_15Km', '_20Km'])
+    rdf = pd.read_csv("Varvetresultat/samples.csv", header=0, sep=";", parse_dates=['ActualStartTime', 'FinishNetto', '_5Km', '_10Km', '_15Km', '_20Km'])
     #convToDate(rdf)
     
     # Remove columns 
@@ -20,11 +19,13 @@ def main():
     # PlaceTotal = 14
     rdf.drop(rdf.columns[[0,2,3,6,7,8,13,14]], axis=1, inplace=True)
     print(rdf['Gender'].value_counts(dropna=False, normalize=True))
-    #scatter(rdf, '_5Km', 'FinishNetto')
+    scatter(rdf, '_5Km', 'FinishNetto')
+    print(DataCalc.BP(rdf, 153551))
 
     #print(rdf)
     #print(rdf.info())
     #print(rdf.describe())
+
 def scatter(dataFrame, xname, yname):
     x=dataFrame[xname]#.sample(n=200, random_state=1)
     y=dataFrame[yname]#.sample(n=200, random_state=1)
