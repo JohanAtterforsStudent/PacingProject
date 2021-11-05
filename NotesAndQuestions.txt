@@ -1,0 +1,14 @@
+gshuf -n 500 fromFile > toFile
+Check:
+t tests
+chi-squared
+what is OR?
+
+---------
+Varvet är inget marathon, vad innebär det att HTW i vårat fall när energinivån kanske inte längre spelar en lika stor roll? 
+Blir folk trötta eller tar energin slut?
+
+Väderkorrelation? Temperatur och luftfuktighet. 
+
+Samma analys för olika pacingstrategier. 
+

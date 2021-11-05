@@ -5,7 +5,7 @@ import DataCalc
 
 def main():
     #ResultId;AthleteId;RaceId;RaceName;Gender;Birthyear;CountryIso;County;Municipality;Status;ActualStartTime;FinishNetto;Place;PlaceClass;PlaceTotal;_5Km;_10Km;_15Km;_20Km
-    rdf = pd.read_csv("Varvetresultat/samples.csv", header=0, sep=";", parse_dates=['ActualStartTime', 'FinishNetto', '_5Km', '_10Km', '_15Km', '_20Km'])
+    rdf = pd.read_csv("Varvetresultat/samples.csv", header=0, sep=";", parse_dates=['ActualStartTime', 'FinishNetto', '_15Km', '_20Km'])
     #convToDate(rdf)
     
     # Remove columns 
@@ -18,9 +18,9 @@ def main():
     # PlaceClass = 13,
     # PlaceTotal = 14
     rdf.drop(rdf.columns[[0,2,3,6,7,8,13,14]], axis=1, inplace=True)
-    print(rdf['Gender'].value_counts(dropna=False, normalize=True))
-    scatter(rdf, '_5Km', 'FinishNetto')
-    print(DataCalc.BP(rdf, 153551))
+    #print(rdf['Gender'].value_counts(dropna=False, normalize=True))
+    #scatter(rdf, '_5Km', 'FinishNetto')
+    print(DataCalc.BP(rdf))
 
     #print(rdf)
     #print(rdf.info())

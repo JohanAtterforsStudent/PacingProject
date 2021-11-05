@@ -1,5 +1,0 @@
-gshuf -n 500 fromFile > toFile
-Check:
-t tests
-chi-squared
-what is OR?
