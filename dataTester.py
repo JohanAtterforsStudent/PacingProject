@@ -5,8 +5,12 @@ import DataCalc
 
 def main():
     #ResultId;AthleteId;RaceId;RaceName;Gender;Birthyear;CountryIso;County;Municipality;Status;ActualStartTime;FinishNetto;Place;PlaceClass;PlaceTotal;_5Km;_10Km;_15Km;_20Km
-    rdf = pd.read_csv("Varvetresultat/samples.csv", header=0, sep=";")
-    
+    #rdf = pd.read_csv("Varvetresultat/samples.csv", header=0, sep=";")
+    for i in range(10):
+        path = "Varvetresultat/201" + str(i) + ".csv"
+        df = pd.read_csv(path, header=0, sep=";")
+        print(path)
+        print(df['ResultId'].isna().sum())
     # Remove columns 
     # ResultId = 0,
     # RaceId = 2, 
@@ -19,18 +23,18 @@ def main():
     # Place = 12,
     # PlaceClass = 13,
     # PlaceTotal = 14
-    rdf.drop(rdf.columns[[0,2,3,5,6,7,8,10,12,13,14]], axis=1, inplace=True)
+    #rdf.drop(rdf.columns[[0,2,3,5,6,7,8,10,12,13,14]], axis=1, inplace=True)
     #scatter(rdf, '_5Km', 'FinishNetto')
 
     allSegments = ['_5Km', '_10Km', '_15Km', '_20Km', 'FinishNetto']
     BPSegments = allSegments[0:2]
     DoSSegments = allSegments[2:5]
 
-    DataCalc.BP(rdf, BPSegments)
-    DataCalc.DoS(rdf, DoSSegments)
-    DataCalc.LoS(rdf, 0.25, DoSSegments)
-    print("Length of slowdowns")
-    print(rdf['LoS'].value_counts(dropna=False))
+    #DataCalc.BP(rdf, BPSegments)
+    #DataCalc.DoS(rdf, DoSSegments)
+    #DataCalc.LoS(rdf, 0.25, DoSSegments)
+    #print("Length of slowdowns")
+    #print(rdf['LoS'].value_counts(dropna=False))
     #print(rdf['Status'].value_counts(dropna=False))
     #print(rdf['Gender'].value_counts(dropna=False, normalize=True))
 
