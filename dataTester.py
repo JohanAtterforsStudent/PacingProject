@@ -20,16 +20,19 @@ def main():
     # PlaceClass = 13,
     # PlaceTotal = 14
     rdf.drop(rdf.columns[[0,2,3,5,6,7,8,10,12,13,14]], axis=1, inplace=True)
-    #print(rdf['Gender'].value_counts(dropna=False, normalize=True))
     #scatter(rdf, '_5Km', 'FinishNetto')
-    DataCalc.BP(rdf)
-    DataCalc.DoS(rdf)
-    DataCalc.LoS(rdf, 0.25)
+
+    allSegments = ['_5Km', '_10Km', '_15Km', '_20Km', 'FinishNetto']
+    BPSegments = allSegments[0:2]
+    DoSSegments = allSegments[2:5]
+
+    DataCalc.BP(rdf, BPSegments)
+    DataCalc.DoS(rdf, DoSSegments)
+    DataCalc.LoS(rdf, 0.25, DoSSegments)
     print("Length of slowdowns")
     print(rdf['LoS'].value_counts(dropna=False))
-    print(rdf['Status'].value_counts(dropna=False))
-    #print(rdf.info())
-    #print(rdf.describe())
+    #print(rdf['Status'].value_counts(dropna=False))
+    #print(rdf['Gender'].value_counts(dropna=False, normalize=True))
 
 def scatter(dataFrame, xname, yname):
     x=dataFrame[xname]#.sample(n=200, random_state=1)
@@ -38,6 +41,6 @@ def scatter(dataFrame, xname, yname):
     plt.xlabel(xname)
     plt.xlabel(yname)
     plt.show()
-    
+
 if __name__ == "__main__":
     main()
