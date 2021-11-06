@@ -5,24 +5,30 @@ import DataCalc
 
 def main():
     #ResultId;AthleteId;RaceId;RaceName;Gender;Birthyear;CountryIso;County;Municipality;Status;ActualStartTime;FinishNetto;Place;PlaceClass;PlaceTotal;_5Km;_10Km;_15Km;_20Km
-    rdf = pd.read_csv("Varvetresultat/samples.csv", header=0, sep=";", parse_dates=['ActualStartTime', 'FinishNetto', '_15Km', '_20Km'])
+    rdf = pd.read_csv("Varvetresultat/2019.csv", header=0, sep=";")
     #convToDate(rdf)
     
     # Remove columns 
     # ResultId = 0,
     # RaceId = 2, 
     # RaceName = 3, 
+    # Birthyear = 5,
     # CountryIso = 6,
     # Municipality = 7,
     # Status = 8,
+    # ActualStartTime = 10
+    # Place = 12,
     # PlaceClass = 13,
     # PlaceTotal = 14
-    rdf.drop(rdf.columns[[0,2,3,6,7,8,13,14]], axis=1, inplace=True)
+    rdf.drop(rdf.columns[[0,2,3,5,6,7,8,10,12,13,14]], axis=1, inplace=True)
     #print(rdf['Gender'].value_counts(dropna=False, normalize=True))
     #scatter(rdf, '_5Km', 'FinishNetto')
-    print(DataCalc.BP(rdf))
-
-    #print(rdf)
+    DataCalc.BP(rdf)
+    DataCalc.DoS(rdf)
+    DataCalc.LoS(rdf, 0.25)
+    print(rdf)
+    print(rdf['LoS'].value_counts(dropna=False))
+    print(rdf['Status'].value_counts(dropna=False))
     #print(rdf.info())
     #print(rdf.describe())
 
