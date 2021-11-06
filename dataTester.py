@@ -5,8 +5,7 @@ import DataCalc
 
 def main():
     #ResultId;AthleteId;RaceId;RaceName;Gender;Birthyear;CountryIso;County;Municipality;Status;ActualStartTime;FinishNetto;Place;PlaceClass;PlaceTotal;_5Km;_10Km;_15Km;_20Km
-    rdf = pd.read_csv("Varvetresultat/2019.csv", header=0, sep=";")
-    #convToDate(rdf)
+    rdf = pd.read_csv("Varvetresultat/samples.csv", header=0, sep=";")
     
     # Remove columns 
     # ResultId = 0,
@@ -26,7 +25,7 @@ def main():
     DataCalc.BP(rdf)
     DataCalc.DoS(rdf)
     DataCalc.LoS(rdf, 0.25)
-    print(rdf)
+    print("Length of slowdowns")
     print(rdf['LoS'].value_counts(dropna=False))
     print(rdf['Status'].value_counts(dropna=False))
     #print(rdf.info())
@@ -39,14 +38,6 @@ def scatter(dataFrame, xname, yname):
     plt.xlabel(xname)
     plt.xlabel(yname)
     plt.show()
-#def convToDate(rdf):
-    #rdf['ActualStartTime'] = pd.to_datetime(rdf['ActualStartTime'], format=' %H:%M:%S').dt.time
-    #rdf['FinishNetto'] = pd.to_datetime(rdf['FinishNetto'], format='%H:%M:%S').dt.time
-    #rdf['_5Km'] = pd.to_datetime(rdf['_5Km'], format='%H:%M:%S').dt.time
-    #rdf['_10Km'] = pd.to_datetime(rdf['_10Km'], format='%H:%M:%S').dt.time
-    #rdf['_15Km'] = pd.to_datetime(rdf['_15Km'], format='%H:%M:%S').dt.time
-    #rdf['_20Km'] = pd.to_datetime(rdf['_20Km'], format='%H:%M:%S').dt.time
-    #pd.to_timedelta(rdf['ActualStartTime', 'FinishNetto'])
-
+    
 if __name__ == "__main__":
     main()
