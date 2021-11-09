@@ -11,6 +11,7 @@ def main():
         df = pd.read_csv(path, header=0, sep=";")
         print(path)
         print(df['ResultId'].isna().sum())
+        print(df['Status'].value_counts(dropna=False))
     # Remove columns 
     # ResultId = 0,
     # RaceId = 2, 
