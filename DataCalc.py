@@ -1,5 +1,4 @@
 import pandas as pd
-# Currently BP is average pace first 10 km. 
 # TODO: Add parameters of segments to calculate BP of. 
 def BP(df, segments):
     df['BP'] = pd.to_timedelta(0)
