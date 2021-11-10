@@ -63,10 +63,7 @@ class PacingProject:
 
 
     def PrintStat(self,groupBy):
-        print("Length of slowdowns")
-        print(self.df['LoS'].value_counts(dropna=False))
-        print(self.df)
-        #self.df.groupby(groupBy).apply(print)
+        self.df.groupby(groupBy).apply(print)
 
     
     def BP(self):
@@ -89,13 +86,29 @@ class PacingProject:
                 self.df.loc[self.df['DoS' + seg] >= dos, 'LoS'] += 1.0975
             else: 
                 self.df.loc[self.df['DoS' + seg] >= dos, 'LoS'] += 5
+    
+    def SensitivityPlot(self):
+        df = pd.DataFrame()
+        df["SlowdownThresholds"] = pd.Series(np.arange(0.02,0.62, 0.02))
+
+        df["5Km"] = 0
+        df["10Km"] = 0
+        df["15Km"] = 0
+        df["20Km"] = 0
+        df["21Km"] = 0
+
+        for i, value in enumerate(df["SlowdownThresholds"]):
+            self.LoS(value)
+            for j, value in enumerate([5,10,15,20,21.0975]):
+                df.iat[i,j+1] = self.df.loc[(self.df["LoS"] >= value), ["AthleteId"]].count() / self.df["AthleteId"].count()
+        print(df)
 
 if __name__ == "__main__":
     PacingProject = PacingProject()
     PacingProject.MakeCSVs()       #Run too make a csv of all races in directory with renamed columns and a smaller with all runners that have completed all races
-    PacingProject.ReadLargeCsv()
+    PacingProject.ReadSmallTestCsv()
     PacingProject.AddPaces()
     PacingProject.BP()
     PacingProject.DoS()
-    PacingProject.LoS(0.25)
-    PacingProject.PrintStat('AthleteId')
+    PacingProject.SensitivityPlot()
+    #PacingProject.PrintStat('AthleteId')
