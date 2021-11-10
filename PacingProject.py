@@ -9,8 +9,10 @@ class PacingProject:
         self.directory = 'Varvetresultat'
         self.files = os.listdir(self.directory)
         self.timeColumns = ['Time','5km','10km','15km','20km']
+        # 5Km, 10Km
         self.BPSegs = self.timeColumns[1:3]
-        self.DoSSegs = [self.timeColumns[0], self.timeColumns[3:4]]
+        # 15Km, 20Km, Time
+        self.DoSSegs = self.timeColumns[3:5] + [self.timeColumns[0]]
 
     def MakeCSVs(self):
         if(not exists("Varvetresultat/AllResult.csv")):
@@ -61,6 +63,8 @@ class PacingProject:
 
 
     def PrintStat(self,groupBy):
+        print("Length of slowdowns")
+        print(self.df['LoS'].value_counts(dropna=False))
         print(self.df)
         #self.df.groupby(groupBy).apply(print)
 
@@ -72,29 +76,26 @@ class PacingProject:
         self.df['BP'] = (self.df['BP'] / len(self.BPSegs)).astype(int)
 
     def DoS(self):
-        for i, seg in enumerate(self.DoSSegs):
-            if seg == '5Km':
-                self.df['DoS_5Km'] = (pd.to_timedelta(df['_5Km']) / 5) / df['BP'] - 1
-            elif i == 0:
-                prevSegIndex = self.timeColumns.index(seg) - 1
-                df['DoS' + seg] = ((pd.to_timedelta(df[seg]) - (pd.to_timedelta(df[self.allSegments[prevSegIndex]])) ) / 5) / df['BP'] - 1
-            else:
-                df['DoS' + seg] = ((pd.to_timedelta(df[seg]) - pd.to_timedelta(df[segments[i-1]])) / 5) / df['BP'] - 1
-        return df
+        for seg in self.DoSSegs:
+            if seg == "Time":
+                self.df['DoS' + seg] = self.df["21kmPace"] / self.df['BP'] - 1
+            else :
+                self.df['DoS' + seg] = self.df[seg + "Pace"] / self.df['BP'] - 1
 
-    def LoS(df, dos, segments):
-        df['LoS'] = 0
-        for seg in segments:
-            if seg == 'DoSFinishNetto':
-                df.loc[df['Dos' + seg] >= dos, 'LoS'] += 1.0975
+    def LoS(self, dos):
+        self.df['LoS'] = 0
+        for seg in self.DoSSegs:
+            if seg == 'Time':
+                self.df.loc[self.df['DoS' + seg] >= dos, 'LoS'] += 1.0975
             else: 
-                df.loc[df['DoS' + seg] >= dos, 'LoS'] += 5
-        return df
+                self.df.loc[self.df['DoS' + seg] >= dos, 'LoS'] += 5
 
 if __name__ == "__main__":
     PacingProject = PacingProject()
     PacingProject.MakeCSVs()       #Run too make a csv of all races in directory with renamed columns and a smaller with all runners that have completed all races
-    PacingProject.ReadSmallTestCsv()
+    PacingProject.ReadLargeCsv()
     PacingProject.AddPaces()
     PacingProject.BP()
+    PacingProject.DoS()
+    PacingProject.LoS(0.25)
     PacingProject.PrintStat('AthleteId')
