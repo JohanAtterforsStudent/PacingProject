@@ -1,5 +1,7 @@
+from matplotlib.pyplot import colorbar, legend
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import os
 from os.path import exists
 
@@ -89,7 +91,7 @@ class PacingProject:
     
     def SensitivityPlot(self):
         df = pd.DataFrame()
-        df["SlowdownThresholds"] = pd.Series(np.arange(0.02,0.62, 0.02))
+        df["SlowdownThresholds"] = pd.Series(np.arange(0,0.80, 0.05))
 
         df["5Km"] = 0
         df["10Km"] = 0
@@ -101,7 +103,17 @@ class PacingProject:
             self.LoS(value)
             for j, value in enumerate([5,10,15,20,21.0975]):
                 df.iat[i,j+1] = self.df.loc[(self.df["LoS"] >= value), ["AthleteId"]].count() / self.df["AthleteId"].count()
-        print(df)
+
+        x=df["SlowdownThresholds"]
+        plt.plot(x, df["5Km"], 'go--', label="5Km")
+        plt.plot(x, df["10Km"],'bD--', label="10Km")
+        plt.plot(x, df["15Km"],'yx--', label="15Km")
+        plt.legend()
+        #plt.plot(x, df["21Km"], color='r')
+        plt.xlabel("Slowdown Thresholds")
+        plt.ylabel("Proportion")
+        plt.show()
+
 
 if __name__ == "__main__":
     PacingProject = PacingProject()
