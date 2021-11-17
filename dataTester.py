@@ -6,12 +6,14 @@ import DataCalc
 def main():
     #ResultId;AthleteId;RaceId;RaceName;Gender;Birthyear;CountryIso;County;Municipality;Status;ActualStartTime;FinishNetto;Place;PlaceClass;PlaceTotal;_5Km;_10Km;_15Km;_20Km
     #rdf = pd.read_csv("Varvetresultat/samples.csv", header=0, sep=";")
+    nan = 0
     for i in range(10):
         path = "Varvetresultat/201" + str(i) + ".csv"
         df = pd.read_csv(path, header=0, sep=";")
-        print(path)
-        print(df['ResultId'].isna().sum())
-        print(df['Status'].value_counts(dropna=False))
+        #print(path)
+        nan = (df['ResultId'].isna().sum())
+        print(f"Year: 201{i}, NaN: {nan}")
+        #print(df['Status'].value_counts(dropna=False))
 
     allSegments = ['_5Km', '_10Km', '_15Km', '_20Km', 'FinishNetto']
     BPSegments = allSegments[0:2]

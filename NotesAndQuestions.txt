@@ -12,3 +12,7 @@ Väderkorrelation? Temperatur och luftfuktighet.
 
 Samma analys för olika pacingstrategier. 
 
+---------
+
+Zoommöte med läkaren
+[x] Maila Johan Tigér
