@@ -62,9 +62,12 @@ class PacingProject:
 
     def ReadLargeCsv(self): #read large file
         self.df = pd.read_csv(self.directory + '/AllResult.csv')
+        self.AddPaces()
 
     def ReadSmallTestCsv(self): #read small file
         self.df = pd.read_csv(self.directory + '/SmallTestResult.csv')
+        self.AddPaces()
+        self.AddPB()
 
 
     def AddPaces(self):
@@ -80,10 +83,16 @@ class PacingProject:
         self.df['15KmRelativePace'] = self.df['15kmPace']/self.df['TotalPace']
         self.df['20KmRelativePace'] = self.df['20kmPace']/self.df['TotalPace']
         self.df['21KmRelativePace'] = self.df['21kmPace']/self.df['TotalPace']
+        self.BP()
+        self.DoS()
 
+    def AddPB(self):
+        min_values = self.df.groupby('AthleteId').agg({'Time' : np.min})
+        self.df = self.df.merge(min_values, how='outer', on='AthleteId')
+        self.df.rename(columns = {'Time_x' : 'Time', 'Time_y':'Pb'}, inplace = True)
 
     def PrintStat(self,groupBy):
-        self.df.groupby(groupBy).apply(print)
+        pass
 
     
     def BP(self):
@@ -109,7 +118,7 @@ class PacingProject:
     
     def SensitivityPlot(self):
         df = pd.DataFrame()
-        df["SlowdownThresholds"] = pd.Series(np.arange(0,0.80, 0.05))
+        df["SlowdownThresholds"] = pd.Series(np.arange(0.1,0.60, 0.05))
 
         df["5Km"] = 0
         df["10Km"] = 0
@@ -288,14 +297,16 @@ class PacingProject:
 
 if __name__ == "__main__":
     PacingProject = PacingProject()
-    #PacingProject.MakeCSVs()       #Run too make a csv of all races in directory with renamed columns and a smaller with all runners that have completed all races
-    #PacingProject.ReadSmallTestCsv()
-    PacingProject.ReadLargeCsv()
-    PacingProject.AddPaces()
-    PacingProject.BP()
-    PacingProject.DoS()
-    PacingProject.SensitivityPlot()
-    #PacingProject.PrintStat('AthleteId')
+    PacingProject.MakeCSVs()       #Run too make a csv of all races in directory with renamed columns and a smaller with all runners that have completed all races
+    
+    # Automatically adds paces, BasePace and DoS. 
+    # If ReadSmall then also add Personal Best
+    PacingProject.ReadSmallTestCsv()
     PacingProject.RemoveFaultyData()
-    PacingProject.ShowDistributions()
+    #PacingProject.ReadLargeCsv()
+    # Plot DoS sensitivity, proportion of runners to slowdown
+    PacingProject.SensitivityPlot()
+    
+    #PacingProject.PrintStat('AthleteId')
+    #PacingProject.ShowDistributions()
     #PacingProject.PaceClassification()
