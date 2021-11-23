@@ -10,10 +10,14 @@ def main():
     for i in range(10):
         path = "Varvetresultat/201" + str(i) + ".csv"
         df = pd.read_csv(path, header=0, sep=";")
+        df.dropna(axis=0, how='all', inplace=True)
         #print(path)
-        nan = (df['ResultId'].isna().sum())
-        print(f"Year: 201{i}, NaN: {nan}")
-        #print(df['Status'].value_counts(dropna=False))
+        #nan = (df['ResultId'].isna().sum())
+        #dnf = df['Status'].value_counts(dropna=False)
+        print("-------------")
+        print(f"Year: 201{i}")
+        print(df['Status'].value_counts(dropna=False))
+        print(df["AthleteId"].count())
 
     allSegments = ['_5Km', '_10Km', '_15Km', '_20Km', 'FinishNetto']
     BPSegments = allSegments[0:2]
