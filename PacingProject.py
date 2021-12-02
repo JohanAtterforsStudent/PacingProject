@@ -7,10 +7,6 @@ import os
 from os.path import exists
 
 import itertools
-from sklearn.neighbors import NearestNeighbors
-from sklearn.cluster import KMeans
-from sklearn.cluster import DBSCAN
-from sklearn.cluster import OPTICS
 
 class PacingProject:
     def __init__(self):
@@ -148,40 +144,70 @@ class PacingProject:
 
         stats = slows.describe()
         print(stats)
-        diff = stats["75%"] - stats["25%"]
-        print(f"Difference 75% - 25%: {diff}")
+        print("Lower 2.5%: " + str(slows.quantile(q=0.1)))
+        print("Upper 97.5%: " + str(slows.quantile(q=0.9)))
         _, ax1 = plt.subplots()
-        ax1.hist(slows, bins=50, weights=np.ones(len(slows)) / len(slows))
+        #weights=np.ones(len(slows)) / len(slows)
+        ax1.hist(slows, bins=50, density=True)
         ax1.set_title(f"Groupings of slowdowns for DoS of {los}")
         ax1.set_xlabel("Running time")
         ax1.set_ylabel("Percentage of runners")
-        plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+        #plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
 
-        _, ax2 = plt.subplots()
-        dnfs = self.df[self.df['Status'] == 'DNF']["Year"]
-        ax2.hist(dnfs, bins=[2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020])
-        ax2.set_title("Dnfs each year")
-        ax2.set_xlabel("Year")
-        ax2.set_ylabel("Number of runners")
+        #_, ax2 = plt.subplots()
+        #dnfs = self.df[self.df['Status'] == 'DNF']["Year"]
+        #ax2.hist(dnfs, bins=[2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020])
+        #ax2.set_title("Dnfs each year")
+        #ax2.set_xlabel("Year")
+        #ax2.set_ylabel("Number of runners")
+        plt.show()
+    
+    def Regressions(self):
+        los = 0.25
+        self.LoS(los)
+        slows = self.df.loc[self.df["LoS"] >= 5, "Time"]
+
+        stats = slows.describe()
+        print(stats)
+        print("Lower 2.5%: " + str(slows.quantile(q=0.025)))
+        print("Upper 97.5%: " + str(slows.quantile(q=0.975)))
+        _, ax1 = plt.subplots()
+        #_, ax2 = plt.subplots()
+        #_, ax3 = plt.subplots()
+        #_, ax4 = plt.subplots()
+        speedupfail = self.df.loc[self.df["LoS"] >= 5, "15kmPace"] / self.df.loc[self.df["LoS"] >= 5, "10kmPace"] 
+        speedupSucc = self.df.loc[self.df["LoS"] < 5, "15kmPace"] / self.df.loc[self.df["LoS"] < 5, "10kmPace"]
+        ax1.set_xlim([4000, 12000])
+        #ax1.set_ylim([0.8, 1.5])
+        ax1.scatter(x=self.df.loc[self.df["LoS"] < 5, "Time"], y=speedupSucc, c='b', s=0.2)
+        ax1.scatter(x=self.df.loc[self.df["LoS"] >= 5, "Time"], y=speedupfail, c='r', s=0.2)
+        #ax2.set_xlim([4000, 11000])
+        #ax2.set_ylim([0.8, 1.5])
+        #ax2.scatter(x=slows, y=self.df.loc[self.df["LoS"] >= 5, "10kmPace"])
+        #ax3.scatter(x=slows, y=self.df.loc[self.df["LoS"] >= 5, "15kmPace"])
+        #ax4.scatter(x=slows, y=self.df.loc[self.df["LoS"] >= 5, "20kmPace"])
         plt.show()
 
     def PBtoProportion(self):
         if "Pb" not in self.df:
             print("AllResults.csv does not calculate a Pb, try with SmallTestResults.csv")
             return
-        los = 0.25
+        los = 0.3
         self.LoS(los)
         slows = self.df.loc[self.df["LoS"] >= 5]
         prop = slows["Time"] / slows["Pb"]
         _, ax1 = plt.subplots()
-        ax1.hist(prop.unique(), bins=50)
+        ax1.hist(prop.unique(), bins=50, density=True)
+        print("Statistics for proportionality of slowdown to Pb")
         print(prop.describe())
         ax1.set_title(f"Proportion of finish time to personal best at DoS {los}")
         ax1.set_ylabel("Number of runners")
         ax1.set_xlabel("Ratio Time / Pb")
 
         _, ax2 = plt.subplots()
-        ax2.hist(self.df["Pb"], bins=50)
+        ax2.hist(self.df["Pb"], bins=50, density=True)
+        print("------------------------------------------------")
+        print("Statistics for personal best")
         print(self.df["Pb"].describe())
         ax2.set_title("Personal best distribution")
         ax2.set_ylabel("Number of runners")
@@ -341,6 +367,30 @@ class PacingProject:
         print("Estimated number of noise points: %d" % n_noise_)
         '''
 
+    def HealthCharts(self):
+        years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
+        means = []
+        std = []
+        for year in years:
+            plt.subplot(10, 1, year - 2009)
+            plt.hist(self.df.loc[self.df["Year"] == year, "Time"], bins=50)
+            m = self.df.loc[self.df["Year"] == year, "Time"].mean()
+            print(m)
+            s = self.df.loc[self.df["Year"] == year, "Time"].std()
+            print(s)
+            means.append(m)
+            std.append(s)
+            plt.title(str(year))
+        plt.tight_layout()
+        _, ax1 = plt.subplots()
+        ax1.plot(years,means)
+        for i,mean in enumerate(means):
+            means[i] = mean + std[i]
+            ax1.plot(years,std)
+        for i,mean in enumerate(means):
+            means[i] = mean - std[i]
+            ax1.plot(years,std)
+        plt.show()
 
 if __name__ == "__main__":
     PacingProject = PacingProject()
@@ -351,10 +401,16 @@ if __name__ == "__main__":
     PacingProject.ReadSmallTestCsv()
     PacingProject.RemoveFaultyData()
     #PacingProject.ReadLargeCsv()
+    
     # Plot DoS sensitivity, proportion of runners to slowdown
     #PacingProject.SensitivityPlot()
+
     #PacingProject.PlotSlowdownGroups()
+    PacingProject.Regressions()
+
     PacingProject.PBtoProportion()
+
+    PacingProject.HealthCharts()
 
     #PacingProject.ShowDistributions()
     #PacingProject.PaceClassification()

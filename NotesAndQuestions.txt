@@ -39,3 +39,6 @@ Kolla mot temperaturen från SMHI. Olika typer av temp, Hampus har färdig
 ML: Kolla tempo i början på lopp + tempo -> förutsäga chansen att spurta
 Kolla med DNFer, många kollapser efter målgång
 Vad har hänt med konditionen på senare år -> folkhälsa (medeltider för kön+ålder)
+
+----
+Modell som rekommenderar förra tempot * f(ability)
