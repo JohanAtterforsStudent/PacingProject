@@ -398,7 +398,7 @@ if __name__ == "__main__":
     
     # Automatically adds paces, BasePace and DoS. 
     # If ReadSmallTestCsv then also add Personal Best
-    PacingProject.ReadSmallTestCsv()
+    PacingProject.ReadLargeCsv()
     PacingProject.RemoveFaultyData()
     #PacingProject.ReadLargeCsv()
     
