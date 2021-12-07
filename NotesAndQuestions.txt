@@ -16,3 +16,29 @@ Samma analys för olika pacingstrategier.
 
 Zoommöte med läkaren
 [x] Maila Johan Tigér
+
+---------
+Glykogen 1-1,5h
+Saltbalans samt temp samt socker(?)nivå.
+
+Vad är en kollaps? 
+En allvarlig kollaps med sjukvårdshjälp, 2-2,5 % 30-80 pers
+
+Återhämtning: Vatten+energi eller dropp och mätning av blodgas
+
+Laktatnivå: Höga, kroppen kräver mer syre-> högre puls -> ökat blodflöde
+-> benmuskler har jobbat och vidgade kärl + hög laktatnivå + receptorer inte funkar
+Om man då stannar samlas allt blod i benen och man kollapsar 90-95% av alla kollapser
+
+Natrium går ner kräver högt vätskteintag/längre distans
+
+Höga kroppstemperaturer
+---------
+Nästa steg:
+Kolla mot temperaturen från SMHI. Olika typer av temp, Hampus har färdig
+ML: Kolla tempo i början på lopp + tempo -> förutsäga chansen att spurta
+Kolla med DNFer, många kollapser efter målgång
+Vad har hänt med konditionen på senare år -> folkhälsa (medeltider för kön+ålder)
+
+----
+Modell som rekommenderar förra tempot * f(ability)

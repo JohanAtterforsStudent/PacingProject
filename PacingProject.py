@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import colorbar, legend
+from matplotlib.ticker import PercentFormatter
 import os
 from os.path import exists
 import tensorflow as tf
@@ -11,12 +12,15 @@ from sklearn.linear_model import LinearRegression
 
 import itertools
 
+<<<<<<< HEAD
 from sklearn.neighbors import NearestNeighbors
 from sklearn.cluster import KMeans
 from sklearn.cluster import DBSCAN
 from sklearn.cluster import OPTICS
 
 
+=======
+>>>>>>> johanA
 class PacingProject:
     def __init__(self):
         self.df = pd.DataFrame()
@@ -36,6 +40,7 @@ class PacingProject:
         if (not exists("Varvetresultat/AllResult.csv")):
             # read and merge all results csvs
             for file in self.files:
+<<<<<<< HEAD
                 temp = pd.read_csv(self.directory + '/' + file, header=0, sep=";")
                 # drop not used cols
                 temp.drop(['ResultId', 'RaceId', 'CountryIso', 'County', 'Municipality', 'ActualStartTime', 'Place',
@@ -47,6 +52,17 @@ class PacingProject:
             self.df = self.df.rename(
                 columns={"RaceName": "Year", "FinishNetto": "Time", "_5Km": "5km", "_10Km": "10km", "_15Km": "15km",
                          "_20Km": "20km"})
+=======
+                temp = pd.read_csv(self.directory+'/'+file, header=0, sep=";")
+                #drop not used cols
+                temp.drop(['ResultId','RaceId','CountryIso','County','Municipality','ActualStartTime','Place','PlaceClass','PlaceTotal'], axis=1, inplace=True)
+                #drop not a number
+                temp.dropna(axis=0, how='any', inplace=True)
+                #temp = temp.dropna()
+                self.df = pd.concat([self.df, temp],ignore_index=True)
+            #rename to easier names
+            self.df = self.df.rename(columns={"RaceName":"Year","FinishNetto":"Time","_5Km":"5km","_10Km":"10km","_15Km": "15km", "_20Km": "20km"})
+>>>>>>> johanA
 
             # transform timestring to int of with number of seconds
             for timeColumn in self.timeColumns:
@@ -103,7 +119,7 @@ class PacingProject:
         self.df['BP'] = 0
         for seg in self.BPSegs:
             self.df['BP'] += self.df[seg + "Pace"]
-        self.df['BP'] = (self.df['BP'] / len(self.BPSegs)).astype(int)
+        self.df['BP'] = (self.df['BP'] / len(self.BPSegs))
 
     def DoS(self):
         for seg in self.DoSSegs:
@@ -132,19 +148,108 @@ class PacingProject:
 
         for i, value in enumerate(df["SlowdownThresholds"]):
             self.LoS(value)
+<<<<<<< HEAD
             for j, value in enumerate([5, 10, 15, 20, 21.0975]):
                 df.iat[i, j + 1] = self.df.loc[(self.df["LoS"] >= value), ["AthleteId"]].count() / self.df[
                     "AthleteId"].count()
+=======
+            for j, dist in enumerate([5,10,15,20,21.0975]):
+                df.iat[i,j+1] = self.df.loc[(self.df["LoS"] >= dist), ["AthleteId"]].count() / self.df["AthleteId"].count()
+>>>>>>> johanA
 
         x = df["SlowdownThresholds"]
         plt.plot(x, df["5Km"], 'go--', label="5Km")
         plt.plot(x, df["10Km"], 'bD--', label="10Km")
         plt.plot(x, df["15Km"], 'yx--', label="15Km")
         plt.legend()
+<<<<<<< HEAD
         # plt.plot(x, df["21Km"], color='r')
+=======
+>>>>>>> johanA
         plt.xlabel("Slowdown Thresholds")
-        plt.ylabel("Proportion")
+        plt.ylabel("Proportion of runners")
         plt.show()
+    
+    def PlotSlowdownGroups(self):
+        los = 0.25
+        self.LoS(los)
+        slows = self.df.loc[self.df["LoS"] >= 5, "Time"]
+
+        stats = slows.describe()
+        print(stats)
+        print("Lower 2.5%: " + str(slows.quantile(q=0.1)))
+        print("Upper 97.5%: " + str(slows.quantile(q=0.9)))
+        _, ax1 = plt.subplots()
+        #weights=np.ones(len(slows)) / len(slows)
+        ax1.hist(slows, bins=50, density=True)
+        ax1.set_title(f"Groupings of slowdowns for DoS of {los}")
+        ax1.set_xlabel("Running time")
+        ax1.set_ylabel("Percentage of runners")
+        #plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+
+        #_, ax2 = plt.subplots()
+        #dnfs = self.df[self.df['Status'] == 'DNF']["Year"]
+        #ax2.hist(dnfs, bins=[2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020])
+        #ax2.set_title("Dnfs each year")
+        #ax2.set_xlabel("Year")
+        #ax2.set_ylabel("Number of runners")
+        plt.show()
+    
+    def Regressions(self):
+        los = 0.25
+        self.LoS(los)
+        slows = self.df.loc[self.df["LoS"] >= 5, "Time"]
+
+        stats = slows.describe()
+        print(stats)
+        print("Lower 2.5%: " + str(slows.quantile(q=0.025)))
+        print("Upper 97.5%: " + str(slows.quantile(q=0.975)))
+        _, ax1 = plt.subplots()
+        #_, ax2 = plt.subplots()
+        #_, ax3 = plt.subplots()
+        #_, ax4 = plt.subplots()
+        speedupfail = self.df.loc[self.df["LoS"] >= 5, "15kmPace"] / self.df.loc[self.df["LoS"] >= 5, "10kmPace"] 
+        speedupSucc = self.df.loc[self.df["LoS"] < 5, "15kmPace"] / self.df.loc[self.df["LoS"] < 5, "10kmPace"]
+        ax1.set_xlim([4000, 12000])
+        #ax1.set_ylim([0.8, 1.5])
+        ax1.scatter(x=self.df.loc[self.df["LoS"] < 5, "Time"], y=speedupSucc, c='b', s=0.2)
+        ax1.scatter(x=self.df.loc[self.df["LoS"] >= 5, "Time"], y=speedupfail, c='r', s=0.2)
+        #ax2.set_xlim([4000, 11000])
+        #ax2.set_ylim([0.8, 1.5])
+        #ax2.scatter(x=slows, y=self.df.loc[self.df["LoS"] >= 5, "10kmPace"])
+        #ax3.scatter(x=slows, y=self.df.loc[self.df["LoS"] >= 5, "15kmPace"])
+        #ax4.scatter(x=slows, y=self.df.loc[self.df["LoS"] >= 5, "20kmPace"])
+        plt.show()
+<<<<<<< HEAD
+=======
+
+    def PBtoProportion(self):
+        if "Pb" not in self.df:
+            print("AllResults.csv does not calculate a Pb, try with SmallTestResults.csv")
+            return
+        los = 0.3
+        self.LoS(los)
+        slows = self.df.loc[self.df["LoS"] >= 5]
+        prop = slows["Time"] / slows["Pb"]
+        _, ax1 = plt.subplots()
+        ax1.hist(prop.unique(), bins=50, density=True)
+        print("Statistics for proportionality of slowdown to Pb")
+        print(prop.describe())
+        ax1.set_title(f"Proportion of finish time to personal best at DoS {los}")
+        ax1.set_ylabel("Number of runners")
+        ax1.set_xlabel("Ratio Time / Pb")
+
+        _, ax2 = plt.subplots()
+        ax2.hist(self.df["Pb"], bins=50, density=True)
+        print("------------------------------------------------")
+        print("Statistics for personal best")
+        print(self.df["Pb"].describe())
+        ax2.set_title("Personal best distribution")
+        ax2.set_ylabel("Number of runners")
+        ax2.set_xlabel("Personal best")
+        plt.show()
+
+>>>>>>> johanA
 
     def RemoveFaultyData(self):
 
@@ -155,6 +260,7 @@ class PacingProject:
         # print(self.df[self.df['Time'] == 0])
         self.df = self.df[self.df['Time'] != 0]
 
+<<<<<<< HEAD
         # print('std of last km relative pace')
         # print(np.std(self.df['21KmRelativePace']))
 
@@ -165,6 +271,12 @@ class PacingProject:
         self.df = self.df[self.df['15KmRelativePace'] < 2]
         self.df = self.df[self.df['10KmRelativePace'] < 2]
         self.df = self.df[self.df['5KmRelativePace'] < 2]
+=======
+        self.df = self.df[self.df["AthleteId"] != 0]
+        #print('std of last km relative pace')
+        #print(np.std(self.df['21KmRelativePace']))
+
+>>>>>>> johanA
 
         # print(str((self.df['20KmRelativePace'] > 3).sum())+' runners with 3xslowdown 15-20km')
 
@@ -333,6 +445,7 @@ class PacingProject:
         print("Estimated number of noise points: %d" % n_noise_)
         '''
 
+<<<<<<< HEAD
     def ANNPredict(self):
 
         BLResult = []
@@ -398,12 +511,39 @@ class PacingProject:
         plt.show()
         '''
 
+=======
+    def HealthCharts(self):
+        years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
+        means = []
+        std = []
+        for year in years:
+            plt.subplot(10, 1, year - 2009)
+            plt.hist(self.df.loc[self.df["Year"] == year, "Time"], bins=50)
+            m = self.df.loc[self.df["Year"] == year, "Time"].mean()
+            print(m)
+            s = self.df.loc[self.df["Year"] == year, "Time"].std()
+            print(s)
+            means.append(m)
+            std.append(s)
+            plt.title(str(year))
+        plt.tight_layout()
+        _, ax1 = plt.subplots()
+        ax1.plot(years,means)
+        for i,mean in enumerate(means):
+            means[i] = mean + std[i]
+            ax1.plot(years,std)
+        for i,mean in enumerate(means):
+            means[i] = mean - std[i]
+            ax1.plot(years,std)
+        plt.show()
+>>>>>>> johanA
 
 if __name__ == "__main__":
     PacingProject = PacingProject()
     PacingProject.MakeCSVs()  # Run too make a csv of all races in directory with renamed columns and a smaller with all runners that have completed all races
 
     # Automatically adds paces, BasePace and DoS. 
+<<<<<<< HEAD
     # If ReadSmall then also add Personal Best
     # PacingProject.ReadSmallTestCsv()
     PacingProject.ReadLargeCsv()
@@ -413,6 +553,23 @@ if __name__ == "__main__":
     # PacingProject.SensitivityPlot()
 
     # PacingProject.PrintStat('AthleteId')
+=======
+    # If ReadSmallTestCsv then also add Personal Best
+    PacingProject.ReadLargeCsv()
+    PacingProject.RemoveFaultyData()
+    #PacingProject.ReadLargeCsv()
+    
+    # Plot DoS sensitivity, proportion of runners to slowdown
+    #PacingProject.SensitivityPlot()
+
+    #PacingProject.PlotSlowdownGroups()
+    PacingProject.Regressions()
+
+    PacingProject.PBtoProportion()
+
+    PacingProject.HealthCharts()
+
+>>>>>>> johanA
     #PacingProject.ShowDistributions()
     PacingProject.PaceClassification()
 
