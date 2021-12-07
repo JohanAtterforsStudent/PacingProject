@@ -12,15 +12,12 @@ from sklearn.linear_model import LinearRegression
 
 import itertools
 
-<<<<<<< HEAD
 from sklearn.neighbors import NearestNeighbors
 from sklearn.cluster import KMeans
 from sklearn.cluster import DBSCAN
 from sklearn.cluster import OPTICS
 
 
-=======
->>>>>>> johanA
 class PacingProject:
     def __init__(self):
         self.df = pd.DataFrame()
@@ -40,7 +37,6 @@ class PacingProject:
         if (not exists("Varvetresultat/AllResult.csv")):
             # read and merge all results csvs
             for file in self.files:
-<<<<<<< HEAD
                 temp = pd.read_csv(self.directory + '/' + file, header=0, sep=";")
                 # drop not used cols
                 temp.drop(['ResultId', 'RaceId', 'CountryIso', 'County', 'Municipality', 'ActualStartTime', 'Place',
@@ -52,17 +48,6 @@ class PacingProject:
             self.df = self.df.rename(
                 columns={"RaceName": "Year", "FinishNetto": "Time", "_5Km": "5km", "_10Km": "10km", "_15Km": "15km",
                          "_20Km": "20km"})
-=======
-                temp = pd.read_csv(self.directory+'/'+file, header=0, sep=";")
-                #drop not used cols
-                temp.drop(['ResultId','RaceId','CountryIso','County','Municipality','ActualStartTime','Place','PlaceClass','PlaceTotal'], axis=1, inplace=True)
-                #drop not a number
-                temp.dropna(axis=0, how='any', inplace=True)
-                #temp = temp.dropna()
-                self.df = pd.concat([self.df, temp],ignore_index=True)
-            #rename to easier names
-            self.df = self.df.rename(columns={"RaceName":"Year","FinishNetto":"Time","_5Km":"5km","_10Km":"10km","_15Km": "15km", "_20Km": "20km"})
->>>>>>> johanA
 
             # transform timestring to int of with number of seconds
             for timeColumn in self.timeColumns:
@@ -148,24 +133,15 @@ class PacingProject:
 
         for i, value in enumerate(df["SlowdownThresholds"]):
             self.LoS(value)
-<<<<<<< HEAD
-            for j, value in enumerate([5, 10, 15, 20, 21.0975]):
-                df.iat[i, j + 1] = self.df.loc[(self.df["LoS"] >= value), ["AthleteId"]].count() / self.df[
-                    "AthleteId"].count()
-=======
             for j, dist in enumerate([5,10,15,20,21.0975]):
                 df.iat[i,j+1] = self.df.loc[(self.df["LoS"] >= dist), ["AthleteId"]].count() / self.df["AthleteId"].count()
->>>>>>> johanA
 
         x = df["SlowdownThresholds"]
         plt.plot(x, df["5Km"], 'go--', label="5Km")
         plt.plot(x, df["10Km"], 'bD--', label="10Km")
         plt.plot(x, df["15Km"], 'yx--', label="15Km")
         plt.legend()
-<<<<<<< HEAD
         # plt.plot(x, df["21Km"], color='r')
-=======
->>>>>>> johanA
         plt.xlabel("Slowdown Thresholds")
         plt.ylabel("Proportion of runners")
         plt.show()
@@ -220,8 +196,6 @@ class PacingProject:
         #ax3.scatter(x=slows, y=self.df.loc[self.df["LoS"] >= 5, "15kmPace"])
         #ax4.scatter(x=slows, y=self.df.loc[self.df["LoS"] >= 5, "20kmPace"])
         plt.show()
-<<<<<<< HEAD
-=======
 
     def PBtoProportion(self):
         if "Pb" not in self.df:
@@ -249,7 +223,6 @@ class PacingProject:
         ax2.set_xlabel("Personal best")
         plt.show()
 
->>>>>>> johanA
 
     def RemoveFaultyData(self):
 
@@ -260,7 +233,6 @@ class PacingProject:
         # print(self.df[self.df['Time'] == 0])
         self.df = self.df[self.df['Time'] != 0]
 
-<<<<<<< HEAD
         # print('std of last km relative pace')
         # print(np.std(self.df['21KmRelativePace']))
 
@@ -271,12 +243,10 @@ class PacingProject:
         self.df = self.df[self.df['15KmRelativePace'] < 2]
         self.df = self.df[self.df['10KmRelativePace'] < 2]
         self.df = self.df[self.df['5KmRelativePace'] < 2]
-=======
         self.df = self.df[self.df["AthleteId"] != 0]
         #print('std of last km relative pace')
         #print(np.std(self.df['21KmRelativePace']))
 
->>>>>>> johanA
 
         # print(str((self.df['20KmRelativePace'] > 3).sum())+' runners with 3xslowdown 15-20km')
 
@@ -445,7 +415,6 @@ class PacingProject:
         print("Estimated number of noise points: %d" % n_noise_)
         '''
 
-<<<<<<< HEAD
     def ANNPredict(self):
 
         BLResult = []
@@ -511,49 +480,12 @@ class PacingProject:
         plt.show()
         '''
 
-=======
-    def HealthCharts(self):
-        years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
-        means = []
-        std = []
-        for year in years:
-            plt.subplot(10, 1, year - 2009)
-            plt.hist(self.df.loc[self.df["Year"] == year, "Time"], bins=50)
-            m = self.df.loc[self.df["Year"] == year, "Time"].mean()
-            print(m)
-            s = self.df.loc[self.df["Year"] == year, "Time"].std()
-            print(s)
-            means.append(m)
-            std.append(s)
-            plt.title(str(year))
-        plt.tight_layout()
-        _, ax1 = plt.subplots()
-        ax1.plot(years,means)
-        for i,mean in enumerate(means):
-            means[i] = mean + std[i]
-            ax1.plot(years,std)
-        for i,mean in enumerate(means):
-            means[i] = mean - std[i]
-            ax1.plot(years,std)
-        plt.show()
->>>>>>> johanA
 
 if __name__ == "__main__":
     PacingProject = PacingProject()
     PacingProject.MakeCSVs()  # Run too make a csv of all races in directory with renamed columns and a smaller with all runners that have completed all races
 
     # Automatically adds paces, BasePace and DoS. 
-<<<<<<< HEAD
-    # If ReadSmall then also add Personal Best
-    # PacingProject.ReadSmallTestCsv()
-    PacingProject.ReadLargeCsv()
-    PacingProject.RemoveFaultyData()
-
-    # Plot DoS sensitivity, proportion of runners to slowdown
-    # PacingProject.SensitivityPlot()
-
-    # PacingProject.PrintStat('AthleteId')
-=======
     # If ReadSmallTestCsv then also add Personal Best
     PacingProject.ReadLargeCsv()
     PacingProject.RemoveFaultyData()
@@ -563,14 +495,13 @@ if __name__ == "__main__":
     #PacingProject.SensitivityPlot()
 
     #PacingProject.PlotSlowdownGroups()
-    PacingProject.Regressions()
+    #PacingProject.Regressions()
 
-    PacingProject.PBtoProportion()
+    #PacingProject.PBtoProportion()
 
-    PacingProject.HealthCharts()
+    #PacingProject.HealthCharts()
 
->>>>>>> johanA
     #PacingProject.ShowDistributions()
-    PacingProject.PaceClassification()
+    #PacingProject.PaceClassification()
 
     PacingProject.ANNPredict()
