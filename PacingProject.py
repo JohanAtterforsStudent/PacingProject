@@ -5,17 +5,17 @@ from matplotlib.pyplot import colorbar, legend
 from matplotlib.ticker import PercentFormatter
 import os
 from os.path import exists
-#import tensorflow as tf
-#from sklearn.model_selection import train_test_split
-#from tensorflow import keras
-#from sklearn.linear_model import LinearRegression
+import tensorflow as tf
+from sklearn.model_selection import train_test_split
+from tensorflow import keras
+from sklearn.linear_model import LinearRegression
 
 import itertools
 
-#from sklearn.neighbors import NearestNeighbors
-#from sklearn.cluster import KMeans
-#from sklearn.cluster import DBSCAN
-#from sklearn.cluster import OPTICS
+from sklearn.neighbors import NearestNeighbors
+from sklearn.cluster import KMeans
+from sklearn.cluster import DBSCAN
+from sklearn.cluster import OPTICS
 
 
 class PacingProject:
