@@ -123,7 +123,7 @@ class PacingProject:
 
     def SensitivityPlot(self):
         df = pd.DataFrame()
-        df["SlowdownThresholds"] = pd.Series(np.arange(0.1, 0.60, 0.05))
+        df["SlowdownThresholds"] = pd.Series(np.arange(0.05, 0.60, 0.05))
 
         df["5Km"] = 0
         df["10Km"] = 0
@@ -131,36 +131,55 @@ class PacingProject:
         df["20Km"] = 0
         df["21Km"] = 0
 
+        self.LoS(0.25)
         for i, value in enumerate(df["SlowdownThresholds"]):
             self.LoS(value)
             for j, dist in enumerate([5,10,15,20,21.0975]):
                 df.iat[i,j+1] = self.df.loc[(self.df["LoS"] >= dist), ["AthleteId"]].count() / self.df["AthleteId"].count()
 
+        print(self.df.loc[(self.df["LoS"] >= 5), ["AthleteId"]].count() / self.df["AthleteId"].count())
         x = df["SlowdownThresholds"]
         plt.plot(x, df["5Km"], 'go--', label="5Km")
         plt.plot(x, df["10Km"], 'bD--', label="10Km")
         plt.plot(x, df["15Km"], 'yx--', label="15Km")
+        plt.annotate(
+        '8.59% of runners slowdown >= 25% \nfor 5 km or more.',
+        xy=(0.25, 0.085783), xycoords='data',
+        xytext=(20, 50), textcoords='offset points',
+        arrowprops=dict(arrowstyle="->"))
         plt.legend()
         # plt.plot(x, df["21Km"], color='r')
-        plt.xlabel("Slowdown Thresholds")
-        plt.ylabel("Proportion of runners")
+        plt.xlabel("Slowdown Thresholds [%]")
+        plt.ylabel("Proportion of runners [%]")
+        plt.savefig('Sensitivity.png', format='png')
         plt.show()
     
     def PlotSlowdownGroups(self):
+        self.df = self.df[self.df['Time'] < 18000]
         los = 0.25
         self.LoS(los)
-        slows = self.df.loc[self.df["LoS"] >= 5, "Time"]
+        slows = self.df.loc[self.df["LoS"] >= 5, "Pb"]
+        reg = self.df['Pb']
 
-        stats = slows.describe()
-        print(stats)
-        print("Lower 2.5%: " + str(slows.quantile(q=0.1)))
-        print("Upper 97.5%: " + str(slows.quantile(q=0.9)))
         _, ax1 = plt.subplots()
-        #weights=np.ones(len(slows)) / len(slows)
-        ax1.hist(slows, bins=50, density=True)
-        ax1.set_title(f"Groupings of slowdowns for DoS of {los}")
-        ax1.set_xlabel("Running time")
-        ax1.set_ylabel("Percentage of runners")
+        sbins, edges = np.histogram(slows, bins=40)
+        regbins, _ = np.histogram(reg, bins=edges)
+        #discard = range(19,40)
+        #sbins = np.delete(sbins, discard)
+        #regbins = np.delete(regbins, discard)
+        #edges = np.delete(edges, discard)
+
+        fin = []
+        for sbin, rbin in zip(sbins, regbins):
+            fin.append(sbin / rbin)
+            print(sbin, rbin)
+        #print(np.diff(edges))660.52
+        ax1.bar(edges[:-1], fin, width=np.diff(edges), edgecolor="black", align="edge")
+
+        ax1.set_title(f"Relative number of runners who HTW to their finishing time, DoS of {los}")
+        ax1.set_xlabel("Personal Best [s]")
+        ax1.set_ylabel("HTW Runners / Total Runners in Pb-group")
+        plt.savefig('HTWRunnersToRuntime.png', format='png')
         #plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
 
         #_, ax2 = plt.subplots()
@@ -174,29 +193,40 @@ class PacingProject:
     def Regressions(self):
         los = 0.25
         self.LoS(los)
-        slows = self.df.loc[self.df["LoS"] >= 5, "Time"]
+        #slows = self.df.loc[self.df["LoS"] >= 5, "Time"]
 
-        stats = slows.describe()
-        print(stats)
-        print("Lower 2.5%: " + str(slows.quantile(q=0.025)))
-        print("Upper 97.5%: " + str(slows.quantile(q=0.975)))
+        #stats = slows.describe()
+        #print(stats)
+        #print("Lower 2.5%: " + str(slows.quantile(q=0.025)))
+        #print("Upper 97.5%: " + str(slows.quantile(q=0.975)))
         _, ax1 = plt.subplots()
         #_, ax2 = plt.subplots()
         #_, ax3 = plt.subplots()
         #_, ax4 = plt.subplots()
-        speedupfail = self.df.loc[self.df["LoS"] >= 5, "15kmPace"] / self.df.loc[self.df["LoS"] >= 5, "10kmPace"] 
-        speedupSucc = self.df.loc[self.df["LoS"] < 5, "15kmPace"] / self.df.loc[self.df["LoS"] < 5, "10kmPace"]
-        ax1.set_xlim([4000, 12000])
-        #ax1.set_ylim([0.8, 1.5])
-        ax1.scatter(x=self.df.loc[self.df["LoS"] < 5, "Time"], y=speedupSucc, c='b', s=0.2)
-        ax1.scatter(x=self.df.loc[self.df["LoS"] >= 5, "Time"], y=speedupfail, c='r', s=0.2)
+        samp = self.df.sample(n=10000, random_state=1)
+        samp['RelativeSpeed'] = 0
+        samp['RelativeSpeed'] = samp['20kmPace']/samp['BP']
+        speedupsucc = samp.loc[samp["LoS"] < 5, "RelativeSpeed"]
+        speedupfail = samp.loc[samp["LoS"] >= 5, "RelativeSpeed"]
+        #samp.loc[samp["LoS"] < 5, "RelativeSpeed"] = self.df['10kmPace']/self.df['5kmPace']
+        
+        #speedupfail = samp.loc[samp["LoS"] >= 5, "21kmPace"] / samp.loc[samp["LoS"] >= 5, "20kmPace"] 
+        #speedupSucc = samp.loc[samp["LoS"] < 5, "21kmPace"] / samp.loc[samp["LoS"] < 5, "20kmPace"]
+        ax1.set_xlim([1000, 15000])
+        ax1.set_ylim([0.8, 1.5])
+        ax1.scatter(x=samp.loc[samp["LoS"] < 5, "Time"], y=speedupsucc, c='b', s=0.2)
+        ax1.scatter(x=samp.loc[samp["LoS"] >= 5, "Time"], y=speedupfail, c='r', s=0.2)
+        ax1.set_title(f"Speedups between 15 Km and Base Pace at DoS of {los}")
+        ax1.set_xlabel("Running time [Sec]")
+        ax1.set_ylabel("Relative pace speedup [1]")
+        #plt.savefig('SpeedupBP-15.png', format='png')
         #ax2.set_xlim([4000, 11000])
         #ax2.set_ylim([0.8, 1.5])
         #ax2.scatter(x=slows, y=self.df.loc[self.df["LoS"] >= 5, "10kmPace"])
         #ax3.scatter(x=slows, y=self.df.loc[self.df["LoS"] >= 5, "15kmPace"])
         #ax4.scatter(x=slows, y=self.df.loc[self.df["LoS"] >= 5, "20kmPace"])
         plt.show()
-
+        
     def PBtoProportion(self):
         if "Pb" not in self.df:
             print("AllResults.csv does not calculate a Pb, try with SmallTestResults.csv")
@@ -424,6 +454,10 @@ class PacingProject:
         splits = ['5km', '10km', '15km', '20km']
         passedSplits = []
 
+        self.LoS(0.25)
+        self.df.loc[self.df["LoS"] >= 5, 'HTW'] = 1
+        self.df.loc[self.df["LoS"] < 5, 'HTW'] = 0
+
         for split in splits:
 
             passedSplits.append(split)
@@ -486,15 +520,16 @@ if __name__ == "__main__":
     PacingProject.MakeCSVs()  # Run too make a csv of all races in directory with renamed columns and a smaller with all runners that have completed all races
 
     # Automatically adds paces, BasePace and DoS. 
-    # If ReadSmallTestCsv then also add Personal Best
-    PacingProject.ReadLargeCsv()
-    PacingProject.RemoveFaultyData()
+    # If ReadSmall then also add Personal Best
+    #PacingProject.ReadSmallTestCsv()
     #PacingProject.ReadLargeCsv()
-    
+    #PacingProject.RemoveFaultyData()
+
     # Plot DoS sensitivity, proportion of runners to slowdown
     #PacingProject.SensitivityPlot()
 
     #PacingProject.PlotSlowdownGroups()
+
     #PacingProject.Regressions()
 
     #PacingProject.PBtoProportion()
@@ -504,4 +539,4 @@ if __name__ == "__main__":
     #PacingProject.ShowDistributions()
     #PacingProject.PaceClassification()
 
-    PacingProject.ANNPredict()
+    #PacingProject.ANNPredict()
