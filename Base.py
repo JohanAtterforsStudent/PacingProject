@@ -2,14 +2,11 @@ import pandas as pd
 import numpy as np
 import os
 
-class PacingProject:
+class Base:
     def __init__(self):
         self.df = pd.DataFrame()
-        self.directory = '/content/drive/MyDrive/Varvetresultat'
+        self.directory = 'Varvetresultat'
         self.files = os.listdir(self.directory)
-        self.files.remove('.ipynb_checkpoints')
-        self.files.remove('Models')
-        self.files.remove('Figs')
         self.files.remove('SmallTestResult.csv')
         self.files.remove('AllResult.csv')
         self.timeColumns = ['Time', '5km', '10km', '15km', '20km', 'ActualStartTime']
@@ -21,53 +18,52 @@ class PacingProject:
                               '21KmRelativePace']
         self.boxLimits = [0.98, 1.02]
         self.boxLimits.append(10)
-
+        pd.set_option("display.max_rows", None, "display.max_columns", None, 'display.expand_frame_repr', False)
 
     def MakeCSVs(self):
-        if (os.path.isfile("/content/drive/MyDrive/Varvetresultat/AllResult.csv")):
-            # read and merge all results csvs
-            sum_nans = 0
-            for file in self.files:
-              temp = pd.read_csv(self.directory + "/" + file, header=0, sep=";")
-              # drop not used cols
-              temp.drop(["ResultId", 'RaceId', 'CountryIso', 'County', 'Municipality', 'Place', 'PlaceClass', 'PlaceTotal'], axis=1, inplace=True)
-              # drop not a number
-              nans = temp.isnull().any(axis=1).sum()
-              #print(f"Nr rows dropped: {nans}")
-              sum_nans += nans
+        # read and merge all results csvs
+        sum_nans = 0
+        for file in self.files:
+          temp = pd.read_csv(self.directory + "/" + file, header=0, sep=";")
+          # drop not used cols
+          temp.drop(["ResultId", 'RaceId', 'CountryIso', 'County', 'Municipality', 'Place', 'PlaceClass', 'PlaceTotal'], axis=1, inplace=True)
+          # drop not a number
+          nans = temp.isnull().any(axis=1).sum()
+          #print(f"Nr rows dropped: {nans}")
+          sum_nans += nans
 
-              temp = temp.dropna()
-              self.df = pd.concat([self.df, temp], ignore_index=True)
-            print(f"Total nans dropped: {sum_nans}")
-            # rename to easier names
-            self.df = self.df.rename(
-                columns={"RaceName": "Year", "FinishNetto": "Time", "_5Km": "5km", "_10Km": "10km", "_15Km": "15km",
+          temp = temp.dropna()
+          self.df = pd.concat([self.df, temp], ignore_index=True)
+        print(f"Total nans dropped: {sum_nans}")
+        # rename to easier names
+        self.df = self.df.rename(
+            columns={"RaceName": "Year", "FinishNetto": "Time", "_5Km": "5km", "_10Km": "10km", "_15Km": "15km",
                          "_20Km": "20km"})
 
-            # transform timestring to int of with number of seconds
-            for timeColumn in self.timeColumns:
-                self.df[timeColumn] = pd.to_timedelta(self.df[timeColumn])
-                self.df[timeColumn] = self.df[timeColumn].dt.seconds
+        # transform timestring to int of with number of seconds
+        for timeColumn in self.timeColumns:
+            self.df[timeColumn] = pd.to_timedelta(self.df[timeColumn])
+            self.df[timeColumn] = self.df[timeColumn].dt.seconds
 
-            # transform datatypes to int64 to avoid storing as float
-            self.df['Year'] = self.df['Year'].str[-4:].astype(int)
-            self.df['Year'] = self.df['Year'].astype("Int64")
-            self.df['AthleteId'] = self.df['AthleteId'].astype("Int64")
-            self.df['Birthyear'] = self.df['Birthyear'].astype("Int64")
+        # transform datatypes to int64 to avoid storing as float
+        self.df['Year'] = self.df['Year'].str[-4:].astype(int)
+        self.df['Year'] = self.df['Year'].astype("Int64")
+        self.df['AthleteId'] = self.df['AthleteId'].astype("Int64")
+        self.df['Birthyear'] = self.df['Birthyear'].astype("Int64")
 
-            # save all results in file
-            self.df.to_csv(self.directory + "/AllResult.csv", index=False)
+        # save all results in file
+        self.df.to_csv(self.directory + "/AllResult.csv", index=False)
 
-            # save everyone that has run all 10 races to smaller csv to use in testing
-            self.df = self.df.groupby("AthleteId").filter(lambda x: len(x) > 9)
-            self.df.to_csv(self.directory + "/SmallTestResult.csv", index=False)
+        # save everyone that has run all 10 races to smaller csv to use in testing
+        self.df = self.df.groupby("AthleteId").filter(lambda x: len(x) > 9)
+        self.df.to_csv(self.directory + "/SmallTestResult.csv", index=False)
 
     def ReadLargeCsv(self):  # read large file
         self.df = pd.read_csv(self.directory + '/AllResult.csv')
         self.AddPaces()
-        #self.AddHistory()
-        #self.LearnFromPrevious()
-        #self.AddAgeExp()
+        self.AddHistory()
+        self.LearnFromPrevious()
+        self.AddAgeExp()
 
     def ReadSmallTestCsv(self):  # read small file
         self.df = pd.read_csv(self.directory + '/SmallTestResult.csv')
@@ -154,7 +150,7 @@ class PacingProject:
         #print(matrix)
 
         row_sums = matrix.sum(axis=1)
-        new_matrix = matrix / row_sums[:, np.newaxis]
+        #new_matrix = matrix / row_sums[:, np.newaxis]
 
         #print(new_matrix)
 
@@ -245,3 +241,17 @@ class PacingProject:
         self.df['dewPoint'] = self.df['Year'].map(dewPointDict)
         self.df['temperature'] = self.df['Year'].map(temperatureDict)
         self.df['relativeHumidity'] = self.df['Year'].map(relativeHumidityDict)
+
+if __name__ == "__main__":
+    base = Base()
+    base.MakeCSVs()  # Run too make a csv of all races in directory with renamed columns and a smaller with all runners that have completed all races
+    base.ReadLargeCsv()
+    base.RemoveFaultyData()
+    # save all results in file
+    base.df.to_csv(base.directory + "/AllResult.csv", index=False)
+
+    base.ReadSmallTestCsv()
+    base.RemoveFaultyData()
+    # save everyone that has run all 10 races to smaller csv to use in testing
+    base.df = base.df.groupby("AthleteId").filter(lambda x: len(x) > 9)
+    base.df.to_csv(base.directory + "/SmallTestResult.csv", index=False)

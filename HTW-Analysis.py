@@ -1,12 +1,60 @@
-import matplotlib.pyplot as plt
+import Base
 import numpy as np
 import pandas as pd
-import Base 
+import seaborn as sb
 
-class htw:
+import os
+from os.path import exists
+import datetime
+
+import matplotlib.pyplot as plt
+from matplotlib.transforms import Affine2D
+
+from sklearn.inspection import permutation_importance
+
+from sklearn import metrics
+from sklearn.metrics import ConfusionMatrixDisplay
+from sklearn.metrics import RocCurveDisplay
+from sklearn.model_selection import RandomizedSearchCV
+
+#from sklearn.utils.class_weight import compute_sample_weight
+#from sklearn.utils import class_weight
+
+import joblib
+
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.svm import LinearSVC
+from imblearn.ensemble import BalancedRandomForestClassifier
+from imblearn.under_sampling import RandomUnderSampler
+from imblearn.over_sampling import RandomOverSampler
+from sklearn.preprocessing import StandardScaler
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.gaussian_process.kernels import RBF
+from sklearn.decomposition import PCA
+
+from sklearn.cluster import KMeans
+
+from statistics import mean, stdev
+from sklearn.model_selection import cross_validate
+from sklearn.model_selection import RepeatedStratifiedKFold, RepeatedKFold
+from sklearn.metrics import plot_confusion_matrix
+
+from dtaidistance import dtw, clustering
+from dtaidistance import dtw_visualisation as dtwvis
+from sklearn.model_selection import GridSearchCV
+from sklearn.neighbors import KNeighborsClassifier
+from dtaidistance.clustering import kmeans
+from tslearn.clustering import TimeSeriesKMeans
+
+class Htw:
     def __init__(self):
-        file = ""
-        self.df = pd.read_csv(file, header=0, sep=";")
+        pd.set_option("display.max_rows", None, "display.max_columns", None, 'display.expand_frame_repr', False)
+        file = 'Varvetresultat/AllResult.csv'
+        self.df = pd.read_csv(file)
 
     def SensitivityPlot(self):
         df = pd.DataFrame()
@@ -169,8 +217,8 @@ class htw:
 
         #params1 = {'n_estimators': 1200, 'min_samples_split': 20, 'min_samples_leaf': 11, 'max_features': 'sqrt', 'max_depth': 110, 'criterion': 'gini', 'bootstrap': True}
         #params_age = {'n_estimators': 2000, 'min_samples_split': 10, 'min_samples_leaf': 15, 'max_features': 'log2', 'max_depth': 170, 'criterion': 'entropy', 'bootstrap': False}
-        cf.set_params(n_estimators=2000, min_samples_split=10, min_samples_leaf=15, max_features='log2', max_depth=170, criterion='entropy', bootstrap=False)
-        cf.fit(X_train, y_train)
+        clf.set_params(n_estimators=2000, min_samples_split=10, min_samples_leaf=15, max_features='log2', max_depth=170, criterion='entropy', bootstrap=False)
+        clf.fit(X_train, y_train)
         #oversample = SMOTE(sampling_strategy=0.3)
         #ada = ADASYN(random_state=42)
         #over_X, over_y = ada.fit_resample(X_train, y_train)
@@ -574,21 +622,6 @@ class htw:
 
         clf = joblib.load('/content/drive/MyDrive/Varvetresultat/Models/RandomForestBalancedCV_Age.pkl')
         #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=1, stratify=y)
-        if crossval == 1:
-            oversample = SMOTE()
-            over_X, over_y = oversample.fit_resample(X, y)
-            over_X_train, over_X_test, over_y_train, over_y_test = train_test_split(over_X, over_y, test_size=0.1, stratify=over_y)
-
-            #Create Stratified K-fold cross validation
-            cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=1, random_state=1)
-            scoring = ('f1', 'recall', 'precision')
-
-            #Evaluate SMOTE SRF model
-            scores = cross_validate(clf, over_X, over_y, scoring=scoring, cv=cv, n_jobs=-1)
-            #Get average evaluation metrics
-            print('Mean f1: %.3f' % mean(scores['test_f1']))
-            print('Mean recall: %.3f' % mean(scores['test_recall']))
-            print('Mean precision: %.3f' % mean(scores['test_precision']))
 
         X_train, X_test, y_train, y_test = train_test_split(Xtemp, y, test_size=0.1, stratify=y, random_state=1)
 
@@ -1090,14 +1123,7 @@ class htw:
       return
 
 if __name__ == "__main__":
-    Base = Base.PacingProject()
-    Base.MakeCSVs()  # Run too make a csv of all races in directory with renamed columns and a smaller with all runners that have completed all races
-
-    # Automatically adds paces, BasePace and DoS. 
-    # If ReadSmall then also add Personal Best
-    #PacingProject.ReadSmallTestCsv()
-    Base.ReadLargeCsv()
-    Base.RemoveFaultyData()
+    htw = Htw()
     #plt.rcParams.update(plt.rcParamsDefault)
     plt.rcParams.update({'font.size': 16})
     plt.rcParams["figure.figsize"] = (8,5)
@@ -1107,7 +1133,7 @@ if __name__ == "__main__":
     #PacingProject.Paceings()
     #PacingProject.Ratios()
     #PacingProject.LossTime()
-    PacingProject.Ability()
+    #htw.Ability()
     #PacingProject.Bars()
     #PacingProject.Runs()
     #PacingProject.Basic()
