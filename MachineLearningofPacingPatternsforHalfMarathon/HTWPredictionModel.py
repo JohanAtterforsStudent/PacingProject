@@ -2,7 +2,6 @@ import argparse
 
 import numpy as np
 import pandas as pd
-import seaborn as sb
 
 import matplotlib.pyplot as plt
 
@@ -13,6 +12,7 @@ from sklearn.metrics import ConfusionMatrixDisplay
 from sklearn.metrics import RocCurveDisplay
 from sklearn.metrics import make_scorer
 from sklearn.metrics import f1_score
+from sklearn.metrics import roc_auc_score
 
 import joblib
 
@@ -32,8 +32,6 @@ from sklearn.decomposition import PCA
 
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import GridSearchCV
-from sklearn.experimental import enable_halving_search_cv
-from sklearn.model_selection import HalvingGridSearchCV
 from sklearn.neighbors import KNeighborsClassifier
 
 
@@ -91,57 +89,52 @@ def randomForest(df, model_name):
     X, y = getXy(df)
     #compute_sample_weight('balanced', np.unique(df.y), df.y)
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, stratify=y, random_state=1)
-    if (True):
-        custom_f1 = make_scorer(
-            f1_score, greater_is_better=True, average="weighted", labels=['Negative Split', 'Normal', 'HTW'])
-        # Number of trees in random forest
-        n_estimators = [int(x)
-                        for x in np.linspace(start=100, stop=1000, num=10)]
-        # Number of features to consider at every split
-        max_features = ['sqrt', 'log2']
-        # Maximum number of levels in tree
-        max_depth = [int(x) for x in np.linspace(10, 200, num=10)]
-        max_depth.append(None)
-        # Minimum number of samples required to split a node
-        min_samples_split = [2, 5, 10, 15, 20]
-        # Minimum number of samples required at each leaf node
-        min_samples_leaf = [int(x) for x in np.linspace(1, 20, num=10)]
-        # Method of selecting samples for training each tree
-        bootstrap = [True, False]
-        criterion = ['gini', 'entropy']
-        #classweight = [{0:1, 1: w} for w in [int(x) for x in np.linspace(0.5, 100, num = 20)]]
-        sampling_strat = ['majority', 'not minority', 'not majority', 'all']
-        # Create the random grid
-        random_grid = {'n_estimators': n_estimators,
-                       'max_features': max_features,
-                       'max_depth': max_depth,
-                       'min_samples_split': min_samples_split,
-                       'min_samples_leaf': min_samples_leaf,
-                       'bootstrap': bootstrap,
-                       'criterion': criterion,
-                       'sampling_strategy': sampling_strat}
-        # 'class_weight': classweight}
-        # sampling_strategy= 0.5, class_weight='balanced' n_estimators=150, random_state=0, class_weight={0:1, 1:10}
-        clf = BalancedRandomForestClassifier()
-        rf_random = RandomizedSearchCV(estimator=clf, param_distributions=random_grid,
-                                       n_iter=10, cv=3, verbose=4, random_state=42, scoring=custom_f1, n_jobs=4)
-        rf_random.fit(X_train, y_train)
-        print(rf_random.best_params_)
-        best_est = rf_random.best_estimator_
-        best_est.fit(X_train, y_train)
-        y_pred = best_est.predict(X_test)
-    #clf = BalancedRandomForestClassifier(verbose=True)
-    #print("Fitting the model ...")
-    #params1 = {'n_estimators': 1200, 'min_samples_split': 20, 'min_samples_leaf': 11, 'max_features': 'sqrt', 'max_depth': 110, 'criterion': 'gini', 'bootstrap': True}
-    #params_age = {'n_estimators': 2000, 'min_samples_split': 10, 'min_samples_leaf': 15, 'max_features': 'log2', 'max_depth': 170, 'criterion': 'entropy', 'bootstrap': False}
-    # n_estimators=2000, min_samples_split=10, min_samples_leaf=15, max_features='log2', max_depth=170, criterion='entropy', bootstrap=False
-    #clf.fit(X_train, y_train)
+    X, y, test_size=0.2, stratify=y, random_state=1)
+    custom_f1 = make_scorer(
+        f1_score, greater_is_better=True, average="weighted", labels=['Negative Split', 'HTW'])
+    custom_roc = make_scorer(
+        roc_auc_score, greater_is_better=True, average="weighted", labels=['Negative Split', 'Normal', 'HTW'])
+    # Number of trees in random forest
+    n_estimators = [int(x)
+                    for x in np.linspace(start=100, stop=1000, num=10)]
+    # Number of features to consider at every split
+    max_features = ['sqrt', 'log2']
+    # Maximum number of levels in tree
+    max_depth = [int(x) for x in np.linspace(10, 200, num=10)]
+    max_depth.append(None)
+    # Minimum number of samples required to split a node
+    min_samples_split = [2, 5, 10, 15, 20]
+    # Minimum number of samples required at each leaf node
+    min_samples_leaf = [int(x) for x in np.linspace(1, 20, num=10)]
+    # Method of selecting samples for training each tree
+    bootstrap = [True, False]
+    criterion = ['gini', 'entropy']
+    #classweight = [{0:1, 1: w} for w in [int(x) for x in np.linspace(0.5, 100, num = 20)]]
+    sampling_strat = ['majority', 'not minority', 'not majority', 'all']
+    # Create the random grid
+    random_grid = {'n_estimators': n_estimators,
+                   'max_features': max_features,
+                   'max_depth': max_depth,
+                   'min_samples_split': min_samples_split,
+                   'min_samples_leaf': min_samples_leaf,
+                   'bootstrap': bootstrap,
+                   'criterion': criterion,
+                   'sampling_strategy': sampling_strat}
+    # 'class_weight': classweight}
+    # sampling_strategy= 0.5, class_weight='balanced' n_estimators=150, random_state=0, class_weight={0:1, 1:10}
+    clf = BalancedRandomForestClassifier()
+    rf_random = RandomizedSearchCV(estimator=clf, param_distributions=random_grid,
+                                   n_iter=10, cv=3, verbose=4, random_state=42, scoring=custom_f1, n_jobs=14)
+    rf_random.fit(X_train, y_train)
+    print(rf_random.best_params_)
+    best_est = rf_random.best_estimator_
+    print("Fitting best estimator...")
+    best_est.fit(X_train, y_train)
     y_pred = best_est.predict(X_test)
+
+    # Plot Confusion matrix
     fig, ax = plt.subplots()
-    # display_labels=['Neg Split', 'Normals', 'HTW']
-    ConfusionMatrixDisplay.from_predictions(
-        y_test, y_pred, ax=ax, cmap='Blues', normalize=None)
+    ConfusionMatrixDisplay.from_predictions(y_test, y_pred, ax=ax, cmap='Blues', normalize=None)
     plt.savefig('confmatrix.pdf', format='pdf')
     plt.show()
 
@@ -149,13 +142,14 @@ def randomForest(df, model_name):
     features = ['5kmPace', '10kmPace', 'temperature', 'LastTime', 'LastSplitRatio',
                 'Age', 'Runs', 'SplitRatio', 'Gender_M']
     print(dict(zip(features, best_est.feature_importances_)))
-    joblib.dump(best_est, f'./Models/{model_name}.pkl')
+
+    joblib.dump(best_est, f'./Models/{model_name}.pkl.gz', compress='gzip')
 
 
 def forestRes(df, model_name):
     X, y = getXy(df)
 
-    clf = joblib.load(f'./Models/{model_name}.pkl')
+    clf = joblib.load(f'./Models/{model_name}.pkl.gz')
 
     _, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, stratify=y, random_state=1)
@@ -173,7 +167,7 @@ def forestRes(df, model_name):
 
     print(metrics.classification_report(y_test, y_pred))
     print(dict(zip(df.columns, clf.feature_importances_)))
-    return 0
+
     print("Calculating Feature importances ...")
     result = permutation_importance(
         clf, X_test, y_test, n_repeats=1, random_state=42, n_jobs=1
@@ -306,10 +300,10 @@ def forestRes(df, model_name):
         index="10 km pace", columns="5 km pace", values="Prob")
 
     # Plotting
-    plt.figure(figsize=(10, 10.5))
-    ax = sb.heatmap(data_pivoted, annot=True, cmap='Blues')
-    ax.set_title("Predicted Probability of HTW")
-    ax.invert_yaxis()
+    #plt.figure(figsize=(10, 10.5))
+    #ax = sb.heatmap(data_pivoted, annot=True, cmap='Blues')
+    #ax.set_title("Predicted Probability of HTW")
+    #ax.invert_yaxis()
     # plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/Predictions_paces_heatmap.pdf')
 
     binned_lastTime, edges_lt = np.histogram(X_test[:, 3], bins=nr_bins)
@@ -331,10 +325,10 @@ def forestRes(df, model_name):
     data_pivoted = data.pivot_table(
         index="Last Time", columns="Temperature", values="Prob")
 
-    plt.figure(figsize=(10, 10.5))
-    ax = sb.heatmap(data_pivoted, annot=True, cmap='Blues')
-    ax.set_title("Predicted Probability of HTW")
-    ax.invert_yaxis()
+    #plt.figure(figsize=(10, 10.5))
+    #ax = sb.heatmap(data_pivoted, annot=True, cmap='Blues')
+    #ax.set_title("Predicted Probability of HTW")
+    #ax.invert_yaxis()
     # plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/Prediction_LastTime_Temp_heatmap.pdf')
 
     # plt.show()
@@ -391,6 +385,7 @@ def forestRes(df, model_name):
 
 
 def multimodel(df):
+    raise Exception("Not properly implemented for multiclass prediction.")
     X, y = getXy(df)
     rus = RandomUnderSampler(random_state=1, sampling_strategy=0.6)
     ros = RandomOverSampler(random_state=1, sampling_strategy=0.3)
@@ -430,7 +425,7 @@ def multimodel(df):
     print(polySvm.score(X_test_scaled, y_test))
     print(metrics.classification_report(
         y_test, polysvm_ypred, target_names=['Avoid HTW', 'HTW']))
-    return 0
+
     rbfSvm = SVC(kernel='rbf', gamma=0.1, max_iter=1e3)
     rbfSvm.fit(X_train_scaled, y_train_ros_rus)
     rbfsvm_ypred = rbfSvm.predict(X_test_scaled)
