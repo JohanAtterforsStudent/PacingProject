@@ -8,7 +8,10 @@ class Base:
         self.directory = 'Varvetresultat'
         self.files = os.listdir(self.directory)
         self.files.remove('SmallTestResult.csv')
+        self.files.remove('HTWPrevTime.csv')
+        self.files.remove('HTWTempRatios.csv')
         self.files.remove('AllResult.csv')
+        self.files.remove('.DS_Store')
         self.timeColumns = ['Time', '5km', '10km', '15km', '20km', 'ActualStartTime']
         # 5Km, 10Km
         self.BPSegs = self.timeColumns[1:3]
@@ -22,19 +25,23 @@ class Base:
 
     def MakeCSVs(self):
         # read and merge all results csvs
-        sum_nans = 0
+        #sum_nans = 0
         for file in self.files:
           temp = pd.read_csv(self.directory + "/" + file, header=0, sep=";")
           # drop not used cols
           temp.drop(["ResultId", 'RaceId', 'CountryIso', 'County', 'Municipality', 'Place', 'PlaceClass', 'PlaceTotal'], axis=1, inplace=True)
           # drop not a number
-          nans = temp.isnull().any(axis=1).sum()
+          #nans = temp.isnull().any(axis=1).sum()
           #print(f"Nr rows dropped: {nans}")
-          sum_nans += nans
+          #sum_nans += nans
 
-          temp = temp.dropna()
+          #temp = temp.dropna()
           self.df = pd.concat([self.df, temp], ignore_index=True)
-        print(f"Total nans dropped: {sum_nans}")
+        #print(f"Total nans dropped: {sum_nans}")
+        old_rows = len(self.df)
+        print(self.df[["_5Km", "_10Km", "_15Km", "_20Km", "FinishNetto"]].isna().sum())
+        self.df = self.df.dropna()
+        print(f"Nr rows dropped: {old_rows - len(self.df)}")
         # rename to easier names
         self.df = self.df.rename(
             columns={"RaceName": "Year", "FinishNetto": "Time", "_5Km": "5km", "_10Km": "10km", "_15Km": "15km",
@@ -68,8 +75,8 @@ class Base:
     def ReadSmallTestCsv(self):  # read small file
         self.df = pd.read_csv(self.directory + '/SmallTestResult.csv')
         self.AddPaces()
-        self.AddHistory()
-        self.LearnFromPrevious()
+        #self.AddHistory()
+        #self.LearnFromPrevious()
         self.AddPB()
     
     def AddAgeExp(self):
@@ -188,8 +195,8 @@ class Base:
         # print(str((self.df['Time'] == 0).sum())+' runners with 00:00:00 as finish time')
         # print(self.df[self.df['Time'] == 0])
         pre = len(self.df)
-        #print(f"Length df before removing stuff: {pre}")
-        bad_time = sum(self.df['Time'] == 0)
+        print(f"Length df before removing stuff: {pre}")
+        #bad_time = sum(self.df['Time'] == 0)
         bad_paces = 0
         bad_paces += sum(self.df['21KmRelativePace'] >= 2)
         bad_paces += sum(self.df['20KmRelativePace'] >= 2)
@@ -209,6 +216,7 @@ class Base:
         self.df = self.df[self.df['10KmRelativePace'] < 2]
         self.df = self.df[self.df['5KmRelativePace'] < 2]
         self.df = self.df[self.df["AthleteId"] != 0]
+        #self.df.drop_duplicates(inplace=True)
 
         print(f"Runners removed due to error: {pre - len(self.df)}")
 
@@ -248,10 +256,20 @@ if __name__ == "__main__":
     base.ReadLargeCsv()
     base.RemoveFaultyData()
     # save all results in file
-    base.df.to_csv(base.directory + "/AllResult.csv", index=False)
+    print(f"All Results length: {len(base.df)}")
+    #base.df.to_csv(base.directory + "/AllResult.csv", index=False)
+    base.df.to_csv(base.directory + "/HTWTempRatios.csv", index=False)
 
-    base.ReadSmallTestCsv()
-    base.RemoveFaultyData()
+    base.AddHistory()
+    base.LearnFromPrevious()
+    base.df = base.df[base.df['LastTime'] <= 14500]
+
+    print(f"Prev Time df length: {len(base.df)}")
+    base.df.to_csv(base.directory + "/HTWPrevTime.csv", index=False)
+
+
+    #base.ReadSmallTestCsv()
+    #base.RemoveFaultyData()
     # save everyone that has run all 10 races to smaller csv to use in testing
-    base.df = base.df.groupby("AthleteId").filter(lambda x: len(x) > 9)
-    base.df.to_csv(base.directory + "/SmallTestResult.csv", index=False)
+    #base.df = base.df.groupby("AthleteId").filter(lambda x: len(x) > 9)
+    #base.df.to_csv(base.directory + "/SmallTestResult.csv", index=False)

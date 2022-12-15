@@ -4,10 +4,10 @@ import pandas as pd
 import seaborn as sb
 
 import os
-from os.path import exists
 import datetime
 
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
 from matplotlib.transforms import Affine2D
 
 from sklearn.inspection import permutation_importance
@@ -22,7 +22,7 @@ from sklearn.model_selection import RandomizedSearchCV
 
 import joblib
 
-from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -53,8 +53,21 @@ from tslearn.clustering import TimeSeriesKMeans
 class Htw:
     def __init__(self):
         pd.set_option("display.max_rows", None, "display.max_columns", None, 'display.expand_frame_repr', False)
-        file = 'Varvetresultat/AllResult.csv'
-        self.df = pd.read_csv(file)
+        self.df = pd.read_csv("Varvetresultat/HTWTempRatios.csv")
+        self.timeColumns = ['Time', '5km', '10km', '15km', '20km', 'ActualStartTime']
+        # 5Km, 10Km
+        self.BPSegs = self.timeColumns[1:3]
+        # 15Km, 20Km, Time
+        self.DoSSegs = self.timeColumns[3:5] + [self.timeColumns[0]]
+        self.relativePaces = ['5KmRelativePace', '10KmRelativePace', '15KmRelativePace', '20KmRelativePace',
+                              '21KmRelativePace']
+    def LoS(self, dos):
+        self.df['LoS'] = 0
+        for seg in self.DoSSegs:
+            if seg == 'Time':
+                self.df.loc[self.df['DoS' + seg] >= dos, 'LoS'] += 1.0975
+            else:
+                self.df.loc[self.df['DoS' + seg] >= dos, 'LoS'] += 5
 
     def SensitivityPlot(self):
         df = pd.DataFrame()
@@ -65,7 +78,7 @@ class Htw:
         #df["11Km"] = 0
 
         for i, value in enumerate(df["SlowdownThresholds"]):
-            self.LoS(value)
+            Base.self.LoS(value)
             for j, dist in enumerate([1]):
                 df.iat[i,j+1] = self.df.loc[(self.df["LoS"] >= 5), ["AthleteId"]].count() / self.df["AthleteId"].count()
 
@@ -91,7 +104,7 @@ class Htw:
         #plt.plot(x, df["21Km"], color='r')
         plt.xlabel("Slowdown Thresholds")
         plt.ylabel("Proportion of runners")
-        plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/Sensitivity.pdf')
+        #plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/Sensitivity.pdf')
         plt.show()
 
     def GetXy(self):
@@ -137,6 +150,7 @@ class Htw:
 
     def RForest(self):
         dist = 10
+        include_runs = False
         # Preprocess
         self.LoS(0.25)
         df = pd.DataFrame()
@@ -165,11 +179,17 @@ class Htw:
         delcols = int(5 - (dist / 5))
 
         temp = df.drop(['LastPaceGroup_EVEN', 'LastPaceGroup_HTW', 'LastPaceGroup_NEG', 'LastPaceGroup_POS'], axis=1, inplace=False)
-        print(temp.head())
         print(temp['Runs'].value_counts())
+
+        if not include_runs:
+          df.drop('Runs', axis=1, inplace=True)
+          nr_features = 7
+        else:
+          nr_features = 8
+
         tempdata = df.values
         Xtemp = tempdata[:, 0:8].astype('float32')
-        print(len(Xtemp[0, 0:8]))
+        print(len(Xtemp[0, 0:nr_features+1]))
 
 
         data = df.values
@@ -180,7 +200,7 @@ class Htw:
         X_train, X_test, y_train, y_test = train_test_split(Xtemp, y, test_size=0.1, stratify=y, random_state=1)
 
         # Number of trees in random forest
-        n_estimators = [int(x) for x in np.linspace(start = 200, stop = 2000, num = 10)]
+        n_estimators = [int(x) for x in np.linspace(start = 100, stop = 1000, num = 10)]
         # Number of features to consider at every split
         max_features = ['auto', 'sqrt', 'log2']
         # Maximum number of levels in tree
@@ -191,10 +211,11 @@ class Htw:
         # Minimum number of samples required at each leaf node
         min_samples_leaf = [int(x) for x in np.linspace(1, 20, num = 10)]
         # Method of selecting samples for training each tree
-        bootstrap = [True, False]# Create the random grid
+        bootstrap = [True, False]
         criterion = ['gini', 'entropy']
-        classweight = [{0:1, 1: w} for w in [int(x) for x in np.linspace(0.5, 100, num = 20)]]
+        #classweight = [{0:1, 1: w} for w in [int(x) for x in np.linspace(0.5, 100, num = 20)]]
 
+        # Create the random grid
         random_grid = {'n_estimators': n_estimators,
                    'max_features': max_features,
                    'max_depth': max_depth,
@@ -206,13 +227,13 @@ class Htw:
 
         clf = BalancedRandomForestClassifier() # sampling_strategy= 0.5, class_weight='balanced' n_estimators=150, random_state=0, class_weight={0:1, 1:10}
 
-        #rf_random = RandomizedSearchCV(estimator = clf, param_distributions = random_grid, 
-        #                               n_iter = 10, cv = 3, verbose=2, random_state=42, scoring='f1', n_jobs=1)
+        rf_random = RandomizedSearchCV(estimator = clf, param_distributions = random_grid, 
+                                       n_iter = 10, cv = 3, verbose=2, random_state=42, scoring='f1', n_jobs=1)
 
-        #rf_random.fit(X_train, y_train)
+        rf_random.fit(X_train, y_train)
 
-        #print(rf_random.best_params_)
-
+        print(rf_random.best_params_)
+        return 0
         print("Fitting the model ...")
 
         #params1 = {'n_estimators': 1200, 'min_samples_split': 20, 'min_samples_leaf': 11, 'max_features': 'sqrt', 'max_depth': 110, 'criterion': 'gini', 'bootstrap': True}
@@ -255,7 +276,7 @@ class Htw:
         {'n_estimators': 2000, 'min_samples_split': 10, 'min_samples_leaf': 15, 'max_features': 'log2', 'max_depth': 170, 'criterion': 'entropy', 'bootstrap': False}
         '''
 
-        joblib.dump(clf, '/content/drive/MyDrive/Varvetresultat/Models/RandomForestBalancedCV_Age.pkl')
+        #joblib.dump(clf, '/content/drive/MyDrive/Varvetresultat/Models/RandomForestBalancedCV_Age.pkl')
         # clf = joblib.load('/content/drive/MyDrive/Varvetresultat/Models/RandomForest.pkl')
         y_pred = clf.predict(X_test)
         #Create confusion matrix
@@ -335,37 +356,50 @@ class Htw:
         #ax.axes.get_yaxis().set_ticks(np.arange(0.8, 1.25, 0.5))
         plt.legend()
         plt.grid()
-        plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/NewPacesHTW.pdf')
+        #plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/NewPacesHTW.pdf')
         plt.show()
         #plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/PacesHTW.pdf')
 
     def Ratios(self):
-        self.df.drop_duplicates(inplace=True)
+        #self.df.drop_duplicates(inplace=True)
+        self.df = pd.read_csv("Varvetresultat/HTWTempRatios.csv")
         self.LoS(0.25)
         self.df['HTW'] = 0
         self.df.loc[self.df['LoS'] >= 5, 'HTW'] = 1
-        self.df['Run'] = 0
+        #self.df['Run'] = 0
         self.df.sort_values(by=['Year'], inplace=True)
-        self.df['Run'] = self.df.groupby(['AthleteId']).cumcount() +1
-        #print(self.df.loc[self.df['AthleteId'] == 155257, ['AthleteId', 'Year', 'Run']])
+        #self.df['Run'] = self.df.groupby(['AthleteId']).cumcount() +1
+        print(f"Length: {len(self.df)}")
 
         dewPoints = [16.4,8.6,3.4,18,10.0,6.0,11.3,10.7,10.5,13.6]
         temperatures = [21.7,16.6,13.6,25.0,18.9,14.7,15.1,13.9,20.0,19.4]
-
+        #self.df.to_csv("Varvetresultat/HTWTempRatios.csv")
         probsRun = []
         for i in range(1,11):
-          htw = self.df.loc[((self.df['HTW'] == 1) & (self.df['Run'] == i)), 'AthleteId'].count()
-          all = self.df.loc[self.df['Run'] == i, 'AthleteId'].count()
+          htw = self.df.loc[((self.df['HTW'] == 1) & (self.df['Runs'] == i)), 'AthleteId'].count()
+          all = self.df.loc[self.df['Runs'] == i, 'AthleteId'].count()
           probsRun.append(round(htw / all, 5))
           #print(round(htw / all, 5))
 
-        #plt.figure()
-        #plt.axis([1, 10, 0.04, 0.12])
-        #plt.plot(range(1, 11), probsRun, label='HTW')
-        #plt.xlabel('Run')
-        #plt.ylabel('Ratio of runners hitting the wall')
-        #plt.grid()
-        #plt.show()
+        plt.figure()
+        plt.axis([1, 10, 0.04, 0.20])
+        plt.plot(range(1, 11), probsRun, label='HTW')
+        plt.xlabel('Runs')
+        plt.ylabel('Ratio of runners hitting the wall')
+        plt.grid()
+        plt.show()
+
+        plt.figure()
+        plt.rcParams['axes.axisbelow'] = True
+        #plt.axis([1, 10, 0.04, 0.20])
+        htwMale = self.df.loc[((self.df['HTW'] == 1) & (self.df['Gender'] == 'M')), 'AthleteId'].count()
+        htwFemale = self.df.loc[((self.df['HTW'] == 1) & (self.df['Gender'] == 'F')), 'AthleteId'].count()
+        allGender = self.df['AthleteId'].count()
+        plt.grid()
+        plt.bar(['Males', 'Females'], [htwMale/allGender, htwFemale/allGender], label='HTW', color=['tab:blue', 'tab:orange'], width=0.5)
+        plt.xlabel('Runs')
+        plt.ylabel('Ratio of runners hitting the wall')
+        plt.show()
 
         probsYear = []
         MprobsYear = []
@@ -378,19 +412,20 @@ class Htw:
           Mall = self.df.loc[((self.df['Year'] == year) & (self.df['Gender'] == 'M')), 'AthleteId'].count()
           Fall = self.df.loc[((self.df['Year'] == year) & (self.df['Gender'] == 'F')), 'AthleteId'].count()
           probsYear.append(round(htw / all, 5))
-          MprobsYear.append(round(Mhtw / Mall, 5))
-          FprobsYear.append(round(Fhtw / Fall, 5))
+          MprobsYear.append(round(Mhtw / Mall, 5) * 100)
+          FprobsYear.append(round(Fhtw / Fall, 5) * 100)
           #print(round(htw / all, 5))
           #plt.rcParams.update({'font.size': 12})
         fig, ax1 = plt.subplots(figsize=(10,7))
         ax1.set_xlabel('Year')
-        ax1.set_ylabel('Ratio of runners hitting the wall')
-        ax1.set_ylim([0, 0.2])
+        ax1.set_ylabel('% of runners hitting the wall')
+        ax1.set_ylim([0, 20])
         ax1.set_xlim([2010, 2019])
         #ax1.plot(range(2010, 2020), probsYear,'--', label='Ratio All')
         ax1.plot(range(2010, 2020), MprobsYear, '-+', label='Ratio Male')
 
         ax1.plot(range(2010, 2020), FprobsYear,'-x', label='Ratio Female')
+        ax1.yaxis.set_major_formatter(mtick.PercentFormatter())
         #ax1.legend()
         ax1.grid()
 
@@ -401,7 +436,7 @@ class Htw:
 
         fig.legend(bbox_to_anchor=(1,1), bbox_transform=ax1.transAxes)
         #ax2.tick_params(axis ='y')
-        plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/tempToHtw.pdf')
+        plt.savefig('figs/tempToHtw.pdf')
         plt.show()
 
     def LossTime(self):
@@ -517,7 +552,7 @@ class Htw:
         ax1.bar(x=segments_los, height=los_base, color='cornflowerblue', edgecolor='k', linewidth=1)
         ax1.bar(x=segments_los, height=los_2segs, bottom=los_base, color='royalblue', edgecolor='k', linewidth=1)
         ax1.bar(x=segments_los, height=los_all, bottom=los_base+los_2segs, color='blue', edgecolor='k', linewidth=1)
-        plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/HtwSegments.pdf')
+        #plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/HtwSegments.pdf')
         plt.show()
         self.df.loc[(self.df['DoS20km'] >= dos), 'LoS20km'] = 1
         print(self.df['LoS20km'].sum())
@@ -528,11 +563,12 @@ class Htw:
         #plt.show()
 
     def Ability(self):
-        #self.df.drop_duplicates(inplace=True)
+        self.df = pd.read_csv("Varvetresultat/HTWPrevTime.csv")
+        print(len(self.df))
         self.LoS(0.25)
         self.df['HTW'] = 0
         self.df.loc[self.df['LoS'] >= 5, 'HTW'] = 1
-        self.df = self.df[self.df['LastTime'] <= 14500]
+        #self.df = self.df[self.df['LastTime'] <= 14500]
         #self.df = self.df[self.df['LastTime'] < 8892]
         #self.df = self.df[self.df['LastTime'] > 5075]
 
@@ -579,7 +615,7 @@ class Htw:
         plt.legend()
         ax1.grid()
 
-        plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/MvsFHtwLastTime.pdf')
+        #plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/MvsFHtwLastTime.pdf')
         plt.show()
 
     def ForestRes(self, crossval):
@@ -621,9 +657,8 @@ class Htw:
         y = data[:,-1].astype('float32')
 
         clf = joblib.load('/content/drive/MyDrive/Varvetresultat/Models/RandomForestBalancedCV_Age.pkl')
-        #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=1, stratify=y)
 
-        X_train, X_test, y_train, y_test = train_test_split(Xtemp, y, test_size=0.1, stratify=y, random_state=1)
+        _, X_test, y_train, y_test = train_test_split(Xtemp, y, test_size=0.1, stratify=y, random_state=1)
 
         y_pred = clf.predict(X_test)
         y_proba = clf.predict_proba(X_test)
@@ -654,7 +689,7 @@ class Htw:
         plt.grid(zorder=1)
         plt.xticks(rotation=45, ha='right')
         fig.tight_layout()
-        plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/FeatureImportances.pdf')
+        #plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/FeatureImportances.pdf')
         plt.show()
 
         samples =  len(y_test) - 1
@@ -830,7 +865,7 @@ class Htw:
         ax = sb.heatmap(data_pivoted, annot=True, cmap='Blues')
         ax.set_title("Predicted Probability of HTW")
         ax.invert_yaxis()
-        plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/Predictions_paces_heatmap.pdf')
+        #plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/Predictions_paces_heatmap.pdf')
 
         binned_lastTime, edges_lt = np.histogram(X_test[:,3], bins=nr_bins)
         binned_temps, edges_temp = np.histogram(X_test[:,2], bins=nr_bins)
@@ -853,7 +888,7 @@ class Htw:
         ax = sb.heatmap(data_pivoted, annot=True, cmap='Blues')
         ax.set_title("Predicted Probability of HTW")
         ax.invert_yaxis()
-        plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/Prediction_LastTime_Temp_heatmap.pdf')
+        #plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/Prediction_LastTime_Temp_heatmap.pdf')
 
         #plt.show()
 
@@ -887,7 +922,7 @@ class Htw:
         ax.set_ylabel("Probability to HTW")
         ax.set_xlabel("Relative slowdown during 5-10 km segment")
         ax.scatter(y=clf.predict_proba(standard_runner10)[:,1], x=standard_runner10[:, 1]/standard_runner10[:, 0])
-        plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/Prediction_StandRunner_diff10kPaces.pdf')
+        #plt.savefig('/content/drive/MyDrive/Varvetresultat/Figs/Prediction_StandRunner_diff10kPaces.pdf')
 
         standard_runner10 = np.tile(standard_runner, (n_samples,1))
         standard_runner10[:, 2] = temp_range
@@ -901,8 +936,9 @@ class Htw:
         plt.show()
 
     def Bars(self):
+        self.df = pd.read_csv("Varvetresultat/HTWPrevTime.csv")
         #print(str(self.df['Pb'].quantile(q=0.98)))
-        self.df = self.df[self.df['LastTime'] <= 12000]
+        #self.df = self.df[self.df['LastTime'] <= 12000]
         #self.df = self.df[self.df['Time'] <= self.df['Pb'].quantile(q=0.98)]
         #self.df = self.df[self.df['Time'] >= self.df['Pb'].quantile(q=0.02)]
         los = 0.25
@@ -1118,8 +1154,10 @@ class Htw:
     def pbs(self):
       df = pd.DataFrame()
       df = self.df[['AthleteId', 'Time']].copy()
+      def rolling_pb():
+        pass
       #print(df.groupby('AthleteId')['Time'].head(10))
-      print(df.groupby('AthleteId')['Time'].rolling(2).min().head(10))
+      print(df.groupby('AthleteId')['Time'].apply(rolling_pb).head(10))
       return
 
 if __name__ == "__main__":
@@ -1127,16 +1165,16 @@ if __name__ == "__main__":
     #plt.rcParams.update(plt.rcParamsDefault)
     plt.rcParams.update({'font.size': 16})
     plt.rcParams["figure.figsize"] = (8,5)
-    #PacingProject.SensitivityPlot()
-    #PacingProject.RForest()
-    #PacingProject.ForestRes(0)
-    #PacingProject.Paceings()
-    #PacingProject.Ratios()
-    #PacingProject.LossTime()
-    #htw.Ability()
-    #PacingProject.Bars()
-    #PacingProject.Runs()
-    #PacingProject.Basic()
-    #PacingProject.kmeans()
-    #PacingProject.Multimodel()
-    #PacingProject.pbs()
+    #htw.SensitivityPlot()
+    #htw.RForest()
+    #htw.ForestRes(0)
+    #htw.Paceings()
+    #htw.Ratios()
+    #htw.LossTime()
+    htw.Ability()
+    #htw.Bars()
+    #htw.Runs()
+    #htw.Basic()
+    #htw.kmeans()
+    #htw.Multimodel()
+    #htw.pbs()
