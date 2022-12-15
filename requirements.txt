@@ -1,7 +1,7 @@
 absl-py==1.0.0
 astunparse==1.6.3
 cachetools==5.1.0
-certifi==2022.5.18
+certifi==2022.12.7
 charset-normalizer==2.0.12
 cycler==0.11.0
 Cython==0.29.30
@@ -32,7 +32,7 @@ oauthlib==3.2.1
 opt-einsum==3.3.0
 packaging==21.3
 pandas==1.4.2
-Pillow==9.1.1
+Pillow==9.3.0
 protobuf==3.20.2
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
@@ -49,7 +49,7 @@ six==1.16.0
 tensorboard==2.9.0
 tensorboard-data-server==0.6.1
 tensorboard-plugin-wit==1.8.1
-tensorflow==2.9.1
+tensorflow==2.9.3
 tensorflow-estimator==2.9.0
 tensorflow-io-gcs-filesystem==0.26.0
 termcolor==1.1.0
